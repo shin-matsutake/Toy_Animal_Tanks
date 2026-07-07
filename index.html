@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
-    <title>動物戦車 おもちゃの大乱闘【バグ修正＆UI完全復元版】</title>
+    <title>動物戦車 おもちゃの大乱闘【完全修正・デグレ徹底排除版】</title>
     <style>
         body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
         #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
@@ -49,7 +49,6 @@
         #centerControls { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
         #powerGaugeWrapper { position: relative; width: 100%; height: 28px; background-color: #111; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
         #powerBar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9100, #ff3d00); }
-        #powerMarker { position: absolute; top: 0; width: 4px; height: 100%; background-color: rgba(25, 25, 255, 0.75); box-shadow: 0 0 6px #fff; display: none; pointer-events: none; }
         #powerText { position: absolute; top: 0; left: 10px; line-height: 28px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
         
         #padFire { background: #d9534f; border: 2px solid #d43f3a; height: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
@@ -126,7 +125,6 @@
             <div id="centerControls">
                 <div id="powerGaugeWrapper">
                     <div id="powerBar"></div>
-                    <div id="powerMarker"></div>
                     <div id="powerText">パワー: 0%</div>
                 </div>
                 <div class="angle-column">
@@ -187,27 +185,13 @@
 
         Object.keys(CharacterData).forEach(key => {
             const code = CharacterData[key].numCode;
-            ImageAssets.tanks[key] = new Image(); 
-            ImageAssets.tanks[key].onload = onImageLoad;
-            ImageAssets.tanks[key].onerror = onImageLoad; 
-            ImageAssets.tanks[key].src = `assets/images/${code}.png`;
-            
-            ImageAssets.turrets[key] = new Image(); 
-            ImageAssets.turrets[key].onload = onImageLoad;
-            ImageAssets.turrets[key].onerror = onImageLoad;
-            ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
+            ImageAssets.tanks[key] = new Image(); ImageAssets.tanks[key].onload = onImageLoad; ImageAssets.tanks[key].onerror = onImageLoad; ImageAssets.tanks[key].src = `assets/images/${code}.png`;
+            ImageAssets.turrets[key] = new Image(); ImageAssets.turrets[key].onload = onImageLoad; ImageAssets.turrets[key].onerror = onImageLoad; ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
         });
 
         MapStages.forEach(st => {
-            ImageAssets.stages[st.id] = new Image();
-            ImageAssets.stages[st.id].onload = onImageLoad;
-            ImageAssets.stages[st.id].onerror = onImageLoad;
-            ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
-            
-            ImageAssets.backgrounds[st.id] = new Image();
-            ImageAssets.backgrounds[st.id].onload = onImageLoad;
-            ImageAssets.backgrounds[st.id].onerror = onImageLoad;
-            ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
+            ImageAssets.stages[st.id] = new Image(); ImageAssets.stages[st.id].onload = onImageLoad; ImageAssets.stages[st.id].onerror = onImageLoad; ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
+            ImageAssets.backgrounds[st.id] = new Image(); ImageAssets.backgrounds[st.id].onload = onImageLoad; ImageAssets.backgrounds[st.id].onerror = onImageLoad; ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
         });
 
         const stageSelect = document.getElementById("selectStageId");
@@ -229,10 +213,7 @@
         }
         validateCounts();
 
-        function selectMap(stageId) {
-            selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0];
-        }
-
+        function selectMap(stageId) { selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0]; }
         function selectRule(r) {
             selectedRuleMode = r;
             document.getElementById('ruleSolo').classList.toggle('selected', r === 'solo');
@@ -249,14 +230,8 @@
                 finalPlayersSetup = [];
                 let idCounter = 1;
                 let charKeys = Object.keys(CharacterData);
-                for(let i=0; i<hCount; i++) {
-                    finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
-                    idCounter++;
-                }
-                for(let i=0; i<cCount; i++) {
-                    finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
-                    idCounter++;
-                }
+                for(let i=0; i<hCount; i++) { finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] }); idCounter++; }
+                for(let i=0; i<cCount; i++) { finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] }); idCounter++; }
                 buildStep3UI();
             }
             document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
@@ -299,13 +274,11 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         
-        let terrainMap = []; 
-        let bullets = []; let particles = []; let introPlanes = [];
+        let terrainMap = []; let bullets = []; let particles = []; let introPlanes = [];
 
         const mapCanvas = document.createElement("canvas");
         const mapCtx = mapCanvas.getContext("2d");
-        mapCanvas.width = 1200;
-        mapCanvas.height = 600;
+        mapCanvas.width = 1200; mapCanvas.height = 600;
 
         const keyInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
         const padInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
@@ -328,8 +301,7 @@
 
         function initInputBinds() {
             const bindBtn = (id, key) => {
-                const btn = document.getElementById(id);
-                if(!btn) return;
+                const btn = document.getElementById(id); if(!btn) return;
                 const press = (e) => { 
                     e.preventDefault(); canvas.focus(); 
                     if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
@@ -358,27 +330,17 @@
         function buildTerrainFromLoadedImage(img, stageType) {
             terrainMap = Array.from({ length: canvas.width }, () => new Int8Array(canvas.height).fill(0));
             let parsedFully = false;
-
             if (img && img.complete && img.width > 0) {
                 try {
-                    let tempCanvas = document.createElement("canvas");
-                    tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-                    let tempCtx = tempCanvas.getContext("2d");
-                    tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
+                    let tempCanvas = document.createElement("canvas"); tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+                    let tempCtx = tempCanvas.getContext("2d"); tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     let imgData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
                     for (let x = 0; x < canvas.width; x++) {
-                        for (let y = 0; y < canvas.height; y++) {
-                            let aIdx = (y * canvas.width + x) * 4 + 3;
-                            if (imgData[aIdx] > 10) { terrainMap[x][y] = 1; } 
-                        }
+                        for (let y = 0; y < canvas.height; y++) { if (imgData[(y * canvas.width + x) * 4 + 3] > 10) { terrainMap[x][y] = 1; } }
                     }
                     parsedFully = true;
-                } catch (e) {
-                    console.warn("自動地形で代用します。");
-                }
+                } catch (e) { console.warn("CORS制限などのため自動地形で代用します。"); }
             }
-
             if (!parsedFully) {
                 mapCtx.fillStyle = "#228b22"; 
                 for (let x = 0; x < canvas.width; x++) {
@@ -386,7 +348,6 @@
                     if (stageType === "hill") surfaceY = Math.floor(canvas.height - 180 + Math.sin(x * 0.005) * 80 + Math.sin(x * 0.02) * 20);
                     else if (stageType === "canyon") surfaceY = Math.floor(canvas.height - 160 + Math.sin(x * 0.008) * 120 + Math.cos(x * 0.03) * 30);
                     else if (stageType === "flat") surfaceY = canvas.height - 100;
-                    
                     mapCtx.fillRect(x, surfaceY, 1, canvas.height - surfaceY);
                     for (let y = surfaceY; y < canvas.height; y++) { terrainMap[x][y] = 1; }
                 }
@@ -400,14 +361,12 @@
         }
 
         function damageTerrain(cx, cy, radius) {
-            if (radius <= 0) return;
-            cx = Math.floor(cx); cy = Math.floor(cy);
+            if (radius <= 0) return; cx = Math.floor(cx); cy = Math.floor(cy);
             for (let x = cx - radius; x <= cx + radius; x++) {
                 if (x < 0 || x >= canvas.width) continue;
                 for (let y = cy - radius; y <= cy + radius; y++) {
                     if (y < 0 || y >= canvas.height) continue;
-                    let dx = x - cx; let dy = y - cy;
-                    if (dx * dx + dy * dy <= radius * radius) { terrainMap[x][y] = 0; }
+                    if ((x - cx)*(x - cx) + (y - cy)*(y - cy) <= radius * radius) { terrainMap[x][y] = 0; }
                 }
             }
             mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
@@ -415,6 +374,8 @@
             for (let i = 0; i < radius * 0.3; i++) {
                 particles.push(new Particle(cx + (Math.random() * radius * 2 - radius), cy + (Math.random() * radius - radius / 2), Math.random() * 4 - 2, Math.random() * -4 - 1, "#ff6600", Math.random() * 3 + 1));
             }
+            // 🛑 修正：地形破壊後に空中浮遊するバグの対策。全戦車の接地判定を即時更新して落下させる
+            if (window.G && window.G.tanks) { window.G.tanks.forEach(t => t.checkGroundStatus()); }
         }
 
         class IntroPlane {
@@ -460,6 +421,21 @@
                 else if (this.type === 3) { damageTerrain(cx, cy, 56); }
                 else if (this.type === 4) { this.owner.x = cx; this.owner.y = cy; this.owner.checkGroundStatus(); }
                 else { damageTerrain(cx, cy, 32); }
+                
+                // 被弾ダメージ判定
+                window.G.tanks.forEach(t => {
+                    if (t.hp > 0 && t.hasSpawned) {
+                        let dist = Math.hypot(t.x - cx, t.y - cy);
+                        let range = this.type === 3 ? 65 : 40;
+                        if (dist < range) {
+                            let dmg = Math.floor((1 - dist / range) * (this.type === 2 ? 45 : 30));
+                            if (dmg > 0) {
+                                t.hp -= dmg; if(t.hp < 0) t.hp = 0;
+                                document.getElementById("debugLog").innerText = `💥 ${t.name} に ${dmg} のダメージ！`;
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -470,26 +446,15 @@
                 this.maxHp = s.hp; this.hp = s.hp; this.maxGas = s.gas; this.gas = s.gas; this.climbLimit = s.climb;
                 this.facingDir = num <= 4 ? 1 : -1; this.angle = this.facingDir === 1 ? -Math.PI / 4 : -3 * Math.PI / 4;
                 this.chargePower = 2; this.chargeDirection = 1; this.isCharging = false;
+                this.cpuThinkTimer = 0; // 🛑 CPUの暴発防止用ウェイトタイマー
             }
             checkGroundStatus() { if (!this.hasSpawned) return; if (!isGround(this.x, this.y + 16)) this.isDropping = true; }
-            updatePosition(checkCliff = false, prevX = 0) {
+            updatePosition() {
                 if (!this.hasSpawned) return;
-                
-                // 落下判定
-                if (!isGround(this.x, this.y + 16)) { 
-                    this.isDropping = true; 
-                } else { 
-                    // 地面にめり込んでいる場合は押し上げる
-                    while(isGround(this.x, this.y + 15)) { this.y--; } 
-                    this.vy = 0; this.isDropping = false; 
-                }
-                
-                // 画面外への落下デス処理
+                if (!isGround(this.x, this.y + 16)) { this.isDropping = true; } 
+                else { while(isGround(this.x, this.y + 15)) { this.y--; } this.vy = 0; this.isDropping = false; }
                 if (this.y >= canvas.height + 20 || this.x < -40 || this.x > canvas.width + 40) { 
-                    if (this.hp > 0) {
-                        this.hp = 0;
-                        document.getElementById("debugLog").innerText = `💀 ${this.name} がステージから落下した！`;
-                    }
+                    if (this.hp > 0) { this.hp = 0; document.getElementById("debugLog").innerText = `💀 ${this.name} がステージから落下した！`; }
                 }
             }
             constrainAngle() {
@@ -498,26 +463,16 @@
                     if (this.angle < -Math.PI * 1.5) this.angle += Math.PI * 2;
                     if (this.angle > Math.PI * 0.5) this.angle -= Math.PI * 2;
                     if (this.angle > -Math.PI / 2 && this.angle <= Math.PI * 0.5) this.angle = this.angle > 0 ? Math.PI * 0.5 : -Math.PI / 2;
-                    else this.maxA = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle)); this.angle = this.maxA;
+                    else this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
                 }
             }
-            update(myTurn) {
+            update(myTurn, dt) {
                 if (!this.hasSpawned) return;
-                
-                // 落下中物理
-                if (this.isDropping) { 
-                    this.vy += 0.25; 
-                    this.y += this.vy; 
-                    this.updatePosition(false); 
-                    return; 
-                }
-                
-                this.updatePosition(false); 
-                if (this.hp <= 0) return;
-                if (!myTurn) return; 
-                this.constrainAngle();
+                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(); return; }
+                this.updatePosition(); if (this.hp <= 0) return;
+                if (!myTurn) return; this.constrainAngle();
 
-                // パワーゲージ
+                // パワーゲージ制御（人間）
                 if (this.isCharging && !this.isCpu) {
                     this.chargePower += 0.15 * this.chargeDirection;
                     if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
@@ -527,17 +482,32 @@
                     document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
                 }
 
-                // CPUの行動
+                // 🛑 修正：CPUの行動ロジック（思考ウェイトを完全に復元）
                 if (this.isCpu) {
-                    if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
-                        let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
-                        if (target) { this.angle = Math.atan2(target.y - this.y, target.x - this.x); }
-                        this.isCharging = true; this.chargePower = 5 + Math.random()*5;
-                    } else if (this.isCharging) { this.isCharging = false; window.G.isShooting = true; this.fire(this.chargePower); }
+                    if (!window.G.isShooting && bullets.length === 0) {
+                        if (this.cpuThinkTimer < 1.5) {
+                            this.cpuThinkTimer += dt;
+                            // じわじわ相手の方向を向く
+                            let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
+                            if (target) {
+                                let targetAngle = Math.atan2(target.y - this.y, target.x - this.x);
+                                this.facingDir = target.x > this.x ? 1 : -1;
+                                this.angle = targetAngle;
+                            }
+                        } else if (!this.isCharging) {
+                            this.isCharging = true;
+                            this.chargePower = 4.5 + Math.random() * 5.5;
+                        } else {
+                            this.isCharging = false;
+                            this.cpuThinkTimer = 0;
+                            window.G.isShooting = true;
+                            this.fire(this.chargePower);
+                        }
+                    }
                     return;
                 }
 
-                // 人間プレイヤーの操作
+                // 人間プレイヤーの操作（キーボード＋スマホパッドの長押し対応連動）
                 let moveLeft = keyInputs.left || padInputs.left; 
                 let moveRight = keyInputs.right || padInputs.right;
                 let angleUp = keyInputs.up || padInputs.up; 
@@ -561,42 +531,20 @@
                     document.getElementById("powerBar").style.width = "0%"; document.getElementById("powerText").textContent = "パワー: 0%"; return;
                 }
                 
-                // 🛑 修正：壁の頂上への瞬間移動・急斜面の不正登坂バグを完全封印
+                // 不正な瞬間移動壁登り防止物理
                 if (!this.isCharging) {
                     if (this.gas >= 0.4 && (moveLeft || moveRight)) {
-                        let dir = moveLeft ? -1 : 1;
-                        let nextX = this.x + dir * 2.5;
-                        
-                        // 移動先の最適な地面の高さを走査
-                        let foundGround = false;
-                        let targetY = this.y;
-                        
-                        // 現在の高さから上下に走査して、移動先の地面を探す
+                        let dir = moveLeft ? -1 : 1; let nextX = this.x + dir * 2.5;
+                        let foundGround = false; let targetY = this.y;
                         for (let dy = -16; dy <= 16; dy++) {
-                            if (isGround(nextX, this.y + dy + 16) && !isGround(nextX, this.y + dy + 15)) {
-                                targetY = this.y + dy;
-                                foundGround = true;
-                                break;
-                            }
+                            if (isGround(nextX, this.y + dy + 16) && !isGround(nextX, this.y + dy + 15)) { targetY = this.y + dy; foundGround = true; break; }
                         }
-                        
                         if (foundGround) {
-                            let heightDiff = this.y - targetY; // 正なら登り坂
-                            // 登り坂の場合、キャラクター固有の登坂限界(climbLimit)を超えていたら進めない
-                            if (heightDiff > 0 && heightDiff > this.climbLimit) {
-                                // 壁にぶつかったとみなし、x座標の移動を完全にキャンセル（瞬間移動を防止）
-                            } else {
-                                // 限界以下の傾斜、または下り坂なら移動を許可
-                                this.x = nextX;
-                                this.y = targetY;
-                                this.gas -= 0.4;
-                            }
-                        } else {
-                            // 先に地面がない（崖から飛び出す）場合はそのまま横移動だけ許可して落下させる
-                            this.x = nextX;
-                            this.gas -= 0.4;
-                        }
-                        this.updatePosition(false);
+                            let heightDiff = this.y - targetY;
+                            if (heightDiff > 0 && heightDiff > this.climbLimit) { /* 登坂限界越えはストップ */ } 
+                            else { this.x = nextX; this.y = targetY; this.gas -= 0.4; }
+                        } else { this.x = nextX; this.gas -= 0.4; }
+                        this.updatePosition();
                     }
                     if (this.gas >= 0.2 && (angleUp || angleDown)) {
                         this.gas -= 0.2;
@@ -618,8 +566,7 @@
                 if (this.hp <= 0 || !this.hasSpawned) return;
                 ctx.save(); ctx.translate(this.x, this.y);
                 let imgTank = ImageAssets.tanks[this.charKey]; let imgTurret = ImageAssets.turrets[this.charKey];
-                let hasImg = imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0;
-                if (hasImg) {
+                if (imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0) {
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
                     ctx.save(); ctx.translate(0, 5); let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
                     ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -6, -10, 30, 16); ctx.restore();
@@ -652,9 +599,7 @@
             startTurn() {
                 if (this.isIntro || this.isGameOver) return;
                 this.turnTimer = 30; this.isShooting = false; this.upWpBtn();
-                
-                // ガソリン全回復
-                if (this.tanks[this.turnIdx]) { this.tanks[this.turnIdx].gas = this.tanks[this.turnIdx].maxGas; }
+                if (this.tanks[this.turnIdx]) { this.tanks[this.turnIdx].gas = this.tanks[this.turnIdx].maxGas; this.tanks[this.turnIdx].cpuThinkTimer = 0; }
                 document.getElementById("debugLog").innerText = `🎮 ターン交代: ${this.tanks[this.turnIdx].name}`;
             }
             nextTurn() {
@@ -675,28 +620,22 @@
                 let now = performance.now(); let dt = (now - this.lastTime) / 1000; this.lastTime = now;
                 if (this.isIntro) {
                     let finished = true; introPlanes.forEach(p => { p.update(); if(!p.hasDropped) finished = false; });
-                    this.tanks.forEach(t => { if(t.hasSpawned) t.update(false); if(t.isDropping || !t.hasSpawned) finished = false; });
+                    this.tanks.forEach(t => { if(t.hasSpawned) t.update(false, dt); if(t.isDropping || !t.hasSpawned) finished = false; });
                     if (finished) { this.isIntro = false; this.startTurn(); } return;
                 }
                 
-                // 🛑 修正：誰かが落下死、または通常死した時にゲームが止まるバグを完全解消
-                // 毎フレーム生存チェックを行い、現在の手番プレイヤーが死亡していたら即座に次のターンへ移行
+                // 生存者確認＆死亡フリーズ対策
                 if (!this.isGameOver) {
                     let currentTank = this.tanks[this.turnIdx];
-                    if (currentTank && currentTank.hp <= 0) {
-                        this.nextTurn();
-                        return;
-                    }
-                    let alive = this.tanks.filter(t => t.hp > 0);
-                    if (alive.length <= 1) { this.checkGameOver(); return; }
+                    if (currentTank && currentTank.hp <= 0) { this.nextTurn(); return; }
+                    let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
                 }
 
                 if (!this.isShooting && bullets.length === 0 && !this.isGameOver) { 
-                    this.turnTimer -= dt; 
-                    if (this.turnTimer <= 0) { this.nextTurn(); return; } 
+                    this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } 
                 }
                 
-                this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
+                this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx, dt); });
                 for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(); if (bullets[i].isDead) bullets.splice(i, 1); }
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
                 if (this.isShooting && bullets.length === 0 && !this.isGameOver) { this.isShooting = false; this.nextTurn(); }
@@ -710,43 +649,27 @@
                 bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
                 particles.forEach(p => p.draw());
                 
-                // 🛑 復元：現在の手番プレイヤーを「赤枠」と「赤▼」で強調表示するUI処理
+                // 枠と手番▼表示UI
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
                     let isCurrentTurn = (idx === this.turnIdx && !this.isIntro && !this.isGameOver);
-                    
                     ctx.save();
-                    // 手番なら赤枠(3px)、そうでなければ透明な黒背景
                     if (isCurrentTurn) {
-                        ctx.fillStyle = "rgba(40,0,0,0.85)";
-                        ctx.fillRect(bx, 10, 142, 65);
-                        ctx.strokeStyle = "#ff3333";
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(bx, 10, 142, 65);
+                        ctx.fillStyle = "rgba(40,0,0,0.85)"; ctx.fillRect(bx, 10, 142, 65);
+                        ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 3; ctx.strokeRect(bx, 10, 142, 65);
                     } else {
-                        ctx.fillStyle = "rgba(0,0,0,0.6)";
-                        ctx.fillRect(bx, 10, 142, 65);
+                        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
                     }
-                    
-                    // 名前の描画（手番なら頭に赤の▼を付ける）
                     ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
                     let displayName = t.name;
-                    if (isCurrentTurn) {
-                        ctx.fillStyle = "#ff3333";
-                        ctx.font = "bold 12px sans-serif";
-                        displayName = "▼ " + displayName;
-                    }
+                    if (isCurrentTurn) { ctx.fillStyle = "#ff3333"; ctx.font = "bold 12px sans-serif"; displayName = "▼ " + displayName; }
                     ctx.fillText(displayName, bx + 71, 24);
                     
-                    // HPバー
                     ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8); 
                     if (t.hp > 0) { ctx.fillStyle = isCurrentTurn ? "#ff3333" : "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
-                    
-                    // ガソリンバー
                     ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6); 
                     if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
                     
-                    // タイマー表示（手番プレイヤーのみ秒数を出す）
                     if (isCurrentTurn && !this.isShooting && bullets.length === 0) {
                         ctx.fillStyle = "#ffcc00"; ctx.font = "bold 10px monospace"; ctx.textAlign = "right";
                         ctx.fillText(`${Math.ceil(this.turnTimer)}s`, bx + 132, 62);
@@ -756,10 +679,7 @@
             }
         }
 
-        function startGame() { 
-            document.getElementById("menuScreen").style.display = "none"; 
-            window.G = new Game(finalPlayersSetup); runGame(); 
-        }
+        function startGame() { document.getElementById("menuScreen").style.display = "none"; window.G = new Game(finalPlayersSetup); runGame(); }
         function runGame() { window.G.update(); window.G.draw(); animationFrameId = requestAnimationFrame(runGame); }
     </script>
 </body>
