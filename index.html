@@ -760,7 +760,8 @@
                         for (let x = Math.max(0, cx - 25); x < Math.min(canvas.width, cx + 25); x++) {
                             let depth = Math.sqrt(Math.max(0, 25 * 25 - (x - cx) * (x - cx))) * 2.5; 
                             let oldSurfaceY = findSurfaceY(x, cy);
-                            reshapeColumn(x, cy, Math.max(50, oldSurfaceY - depth));
+                            // 🌟 修正：元コードは "- depth"(盛る方向)だったが、本来は掘り下げる仕様のため "+ depth" に訂正
+                            reshapeColumn(x, cy, Math.min(canvas.height - 10, oldSurfaceY + depth));
                         }
                     }
                     window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
@@ -790,13 +791,50 @@
                 }
 
                 if (char === "TT-12") { 
-                    cx = Math.floor(cx);
-                    for (let x = Math.max(0, cx - 55); x < Math.min(canvas.width, cx + 55); x++) {
-                        let diff = Math.abs(x - cx);
-                        let oldSurfaceY = findSurfaceY(x, cy);
-                        if (diff > 25) { reshapeColumn(x, cy, Math.min(canvas.height - 20, oldSurfaceY + 45)); } 
-                        else { reshapeColumn(x, cy, Math.max(100, oldSurfaceY - 25)); } 
+                    cx = Math.floor(cx); cy = Math.floor(cy);
+                    // 🐢 甲羅ドーム：外殻(半径innerR〜outerRの半円環)＋内部空洞＋床、を着弾点中心に生成
+                    let outerR = 55, shellT = 16, innerR = outerR - shellT, floorT = 10;
+
+                    // terrainMap更新：上半分のみが対象（殻は環状、内側は空洞）
+                    for (let x = Math.max(0, cx - outerR); x < Math.min(canvas.width, cx + outerR); x++) {
+                        for (let y = Math.max(0, cy - outerR); y <= cy; y++) {
+                            let dx = x - cx, dy = y - cy;
+                            let distSq = dx * dx + dy * dy;
+                            if (distSq > outerR * outerR) continue;
+                            terrainMap[x][y] = (distSq >= innerR * innerR) ? 1 : 0;
+                        }
                     }
+                    // 床：地形の有無に関わらず強制的に作る（谷間で発動すれば橋としても機能する）
+                    for (let x = Math.max(0, cx - innerR); x < Math.min(canvas.width, cx + innerR); x++) {
+                        for (let y = cy; y < Math.min(canvas.height, cy + floorT); y++) terrainMap[x][y] = 1;
+                    }
+
+                    // 見た目：内部をくり抜く→殻を描く→床を描く
+                    mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
+                    mapCtx.beginPath(); mapCtx.moveTo(cx - innerR, cy); mapCtx.arc(cx, cy, innerR, Math.PI, 0, false); mapCtx.closePath(); mapCtx.fill();
+                    mapCtx.restore();
+
+                    mapCtx.save();
+                    let shellPath = new Path2D();
+                    shellPath.moveTo(cx - outerR, cy);
+                    shellPath.arc(cx, cy, outerR, Math.PI, 0, false);
+                    shellPath.lineTo(cx + innerR, cy);
+                    shellPath.arc(cx, cy, innerR, 0, Math.PI, true);
+                    shellPath.closePath();
+                    mapCtx.clip(shellPath, 'evenodd');
+                    mapCtx.fillStyle = "#4a7c3f"; mapCtx.fillRect(cx - outerR, cy - outerR, outerR * 2, outerR);
+                    if (currentStageImg && currentStageImg.complete && currentStageImg.width > 0) {
+                        mapCtx.drawImage(currentStageImg, 0, 0, canvas.width, canvas.height);
+                    }
+                    mapCtx.restore();
+
+                    mapCtx.save(); mapCtx.beginPath(); mapCtx.rect(cx - innerR, cy, innerR * 2, floorT); mapCtx.clip();
+                    mapCtx.fillStyle = "#6b8e23"; mapCtx.fillRect(cx - innerR, cy, innerR * 2, floorT);
+                    if (currentStageImg && currentStageImg.complete && currentStageImg.width > 0) {
+                        mapCtx.drawImage(currentStageImg, 0, 0, canvas.width, canvas.height);
+                    }
+                    mapCtx.restore();
+
                     window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
                     return;
                 }
