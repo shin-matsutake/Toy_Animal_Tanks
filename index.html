@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
-    <title>動物戦車 おもちゃの大乱闘【画像完全ロード修正版】</title>
+    <title>動物戦車 おもちゃの大乱闘【バグ修正＆UI完全復元版】</title>
     <style>
         body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
         #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
@@ -173,26 +173,23 @@
             { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon" }
         ];
 
-        // 🌟 バグ修正：ロード処理が走る「前に」総画像枚数を100%確定させる
         let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2);
         let loadedImages = 0;
 
         function onImageLoad() {
             loadedImages++;
             if (loadedImages >= totalImages) {
-                document.getElementById("debugLog").innerText = "🎮 GitHub上の全画像読み込み完了！いつでも大乱闘を開始できます。";
+                document.getElementById("debugLog").innerText = "🎮 アセット確認完了！いつでも大乱闘を開始できます。";
             } else {
                 document.getElementById("debugLog").innerText = `⏳ 画像資産を通信中... (${loadedImages}/${totalImages})`;
             }
         }
 
-        // 🌟 総数が確定した状態で一斉にロード処理の監視の網を張る
         Object.keys(CharacterData).forEach(key => {
             const code = CharacterData[key].numCode;
-            
             ImageAssets.tanks[key] = new Image(); 
             ImageAssets.tanks[key].onload = onImageLoad;
-            ImageAssets.tanks[key].onerror = onImageLoad; // 万が一画像が欠損していてもフリーズを防ぐ安全弁
+            ImageAssets.tanks[key].onerror = onImageLoad; 
             ImageAssets.tanks[key].src = `assets/images/${code}.png`;
             
             ImageAssets.turrets[key] = new Image(); 
@@ -213,7 +210,6 @@
             ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
         });
 
-        // 以下、UIの構築やゲームロジックは一切デグレードなく100%完全保持
         const stageSelect = document.getElementById("selectStageId");
         MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
 
@@ -315,7 +311,7 @@
         const padInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
 
         window.addEventListener("keydown", (e) => {
-            if (window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+            if (window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
             if (e.code === "ArrowLeft")  { keyInputs.left = true;  e.preventDefault(); }
             if (e.code === "ArrowRight") { keyInputs.right = true; e.preventDefault(); }
             if (e.code === "ArrowUp")    { keyInputs.up = true;    e.preventDefault(); }
@@ -336,7 +332,7 @@
                 if(!btn) return;
                 const press = (e) => { 
                     e.preventDefault(); canvas.focus(); 
-                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
                     padInputs[key] = true; 
                 };
                 const release = (e) => { e.preventDefault(); padInputs[key] = false; };
@@ -350,7 +346,7 @@
             if(fBtn) {
                 const fPress = (e) => { 
                     e.preventDefault(); canvas.focus(); 
-                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
                     if (!padInputs.firePressed && !padInputs.fireReleased) padInputs.firePressed = true; 
                 };
                 const fRelease = (e) => { e.preventDefault(); if (padInputs.firePressed) { padInputs.firePressed = false; padInputs.fireReleased = true; } };
@@ -361,24 +357,37 @@
 
         function buildTerrainFromLoadedImage(img, stageType) {
             terrainMap = Array.from({ length: canvas.width }, () => new Int8Array(canvas.height).fill(0));
-            try {
-                let tempCanvas = document.createElement("canvas");
-                tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-                let tempCtx = tempCanvas.getContext("2d");
-                tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                let imgData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
-                for (let x = 0; x < canvas.width; x++) {
-                    for (let y = 0; y < canvas.height; y++) {
-                        let aIdx = (y * canvas.width + x) * 4 + 3;
-                        if (imgData[aIdx] > 10) { terrainMap[x][y] = 1; } 
+            let parsedFully = false;
+
+            if (img && img.complete && img.width > 0) {
+                try {
+                    let tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+                    let tempCtx = tempCanvas.getContext("2d");
+                    tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    let imgData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    for (let x = 0; x < canvas.width; x++) {
+                        for (let y = 0; y < canvas.height; y++) {
+                            let aIdx = (y * canvas.width + x) * 4 + 3;
+                            if (imgData[aIdx] > 10) { terrainMap[x][y] = 1; } 
+                        }
                     }
+                    parsedFully = true;
+                } catch (e) {
+                    console.warn("自動地形で代用します。");
                 }
-            } catch (e) {
+            }
+
+            if (!parsedFully) {
+                mapCtx.fillStyle = "#228b22"; 
                 for (let x = 0; x < canvas.width; x++) {
-                    let surfaceY = canvas.height - 120;
+                    let surfaceY = canvas.height - 140;
                     if (stageType === "hill") surfaceY = Math.floor(canvas.height - 180 + Math.sin(x * 0.005) * 80 + Math.sin(x * 0.02) * 20);
-                    else if (stageType === "canyon") surfaceY = Math.floor(canvas.height - 150 + Math.sin(x * 0.008) * 120 + Math.cos(x * 0.03) * 30);
+                    else if (stageType === "canyon") surfaceY = Math.floor(canvas.height - 160 + Math.sin(x * 0.008) * 120 + Math.cos(x * 0.03) * 30);
+                    else if (stageType === "flat") surfaceY = canvas.height - 100;
+                    
+                    mapCtx.fillRect(x, surfaceY, 1, canvas.height - surfaceY);
                     for (let y = surfaceY; y < canvas.height; y++) { terrainMap[x][y] = 1; }
                 }
             }
@@ -465,9 +474,23 @@
             checkGroundStatus() { if (!this.hasSpawned) return; if (!isGround(this.x, this.y + 16)) this.isDropping = true; }
             updatePosition(checkCliff = false, prevX = 0) {
                 if (!this.hasSpawned) return;
-                if (!isGround(this.x, this.y + 16)) { this.isDropping = true; } 
-                else { while(isGround(this.x, this.y + 15)) { this.y--; } this.vy = 0; this.isDropping = false; }
-                if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) { if (this.hp > 0) this.hp = 0; }
+                
+                // 落下判定
+                if (!isGround(this.x, this.y + 16)) { 
+                    this.isDropping = true; 
+                } else { 
+                    // 地面にめり込んでいる場合は押し上げる
+                    while(isGround(this.x, this.y + 15)) { this.y--; } 
+                    this.vy = 0; this.isDropping = false; 
+                }
+                
+                // 画面外への落下デス処理
+                if (this.y >= canvas.height + 20 || this.x < -40 || this.x > canvas.width + 40) { 
+                    if (this.hp > 0) {
+                        this.hp = 0;
+                        document.getElementById("debugLog").innerText = `💀 ${this.name} がステージから落下した！`;
+                    }
+                }
             }
             constrainAngle() {
                 if (this.facingDir === 1) { this.angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.angle)); } 
@@ -475,15 +498,26 @@
                     if (this.angle < -Math.PI * 1.5) this.angle += Math.PI * 2;
                     if (this.angle > Math.PI * 0.5) this.angle -= Math.PI * 2;
                     if (this.angle > -Math.PI / 2 && this.angle <= Math.PI * 0.5) this.angle = this.angle > 0 ? Math.PI * 0.5 : -Math.PI / 2;
-                    else this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
+                    else this.maxA = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle)); this.angle = this.maxA;
                 }
             }
             update(myTurn) {
                 if (!this.hasSpawned) return;
-                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(false); return; }
-                this.updatePosition(false); if (this.hp <= 0) return;
-                if (!myTurn) return; this.constrainAngle();
+                
+                // 落下中物理
+                if (this.isDropping) { 
+                    this.vy += 0.25; 
+                    this.y += this.vy; 
+                    this.updatePosition(false); 
+                    return; 
+                }
+                
+                this.updatePosition(false); 
+                if (this.hp <= 0) return;
+                if (!myTurn) return; 
+                this.constrainAngle();
 
+                // パワーゲージ
                 if (this.isCharging && !this.isCpu) {
                     this.chargePower += 0.15 * this.chargeDirection;
                     if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
@@ -493,6 +527,7 @@
                     document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
                 }
 
+                // CPUの行動
                 if (this.isCpu) {
                     if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
                         let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
@@ -502,8 +537,11 @@
                     return;
                 }
 
-                let moveLeft = keyInputs.left || padInputs.left; let moveRight = keyInputs.right || padInputs.right;
-                let angleUp = keyInputs.up || padInputs.up; let angleDown = keyInputs.down || padInputs.down;
+                // 人間プレイヤーの操作
+                let moveLeft = keyInputs.left || padInputs.left; 
+                let moveRight = keyInputs.right || padInputs.right;
+                let angleUp = keyInputs.up || padInputs.up; 
+                let angleDown = keyInputs.down || padInputs.down;
                 let firePressed = keyInputs.firePressed || padInputs.firePressed;
                 let fireReleased = keyInputs.fireReleased || padInputs.fireReleased;
                 let reverseCost = 20 - this.climbLimit; 
@@ -522,10 +560,43 @@
                     window.G.isShooting = true; this.fire(this.chargePower); this.chargePower = 2; this.chargeDirection = 1;
                     document.getElementById("powerBar").style.width = "0%"; document.getElementById("powerText").textContent = "パワー: 0%"; return;
                 }
+                
+                // 🛑 修正：壁の頂上への瞬間移動・急斜面の不正登坂バグを完全封印
                 if (!this.isCharging) {
                     if (this.gas >= 0.4 && (moveLeft || moveRight)) {
-                        let dir = moveLeft ? -1 : 1; this.gas -= 0.4;
-                        let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
+                        let dir = moveLeft ? -1 : 1;
+                        let nextX = this.x + dir * 2.5;
+                        
+                        // 移動先の最適な地面の高さを走査
+                        let foundGround = false;
+                        let targetY = this.y;
+                        
+                        // 現在の高さから上下に走査して、移動先の地面を探す
+                        for (let dy = -16; dy <= 16; dy++) {
+                            if (isGround(nextX, this.y + dy + 16) && !isGround(nextX, this.y + dy + 15)) {
+                                targetY = this.y + dy;
+                                foundGround = true;
+                                break;
+                            }
+                        }
+                        
+                        if (foundGround) {
+                            let heightDiff = this.y - targetY; // 正なら登り坂
+                            // 登り坂の場合、キャラクター固有の登坂限界(climbLimit)を超えていたら進めない
+                            if (heightDiff > 0 && heightDiff > this.climbLimit) {
+                                // 壁にぶつかったとみなし、x座標の移動を完全にキャンセル（瞬間移動を防止）
+                            } else {
+                                // 限界以下の傾斜、または下り坂なら移動を許可
+                                this.x = nextX;
+                                this.y = targetY;
+                                this.gas -= 0.4;
+                            }
+                        } else {
+                            // 先に地面がない（崖から飛び出す）場合はそのまま横移動だけ許可して落下させる
+                            this.x = nextX;
+                            this.gas -= 0.4;
+                        }
+                        this.updatePosition(false);
                     }
                     if (this.gas >= 0.2 && (angleUp || angleDown)) {
                         this.gas -= 0.2;
@@ -558,15 +629,16 @@
                     ctx.lineTo(Math.cos(this.angle) * 28, 8 + Math.sin(this.angle) * 28); ctx.stroke();
                     ctx.fillStyle = this.color; ctx.fillRect(-22, -12, 44, 15); ctx.fillStyle = "#333"; ctx.fillRect(-26, 3, 52, 15);
                 }
-                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42); ctx.restore();
+                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textBaseline = "bottom"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42); ctx.restore();
             }
         }
 
         class Game {
             constructor(configs) {
                 let imgMap = ImageAssets.stages[selectedStageObj.id];
+                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
                 buildTerrainFromLoadedImage(imgMap, selectedStageObj.type);
-                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height); mapCtx.drawImage(imgMap, 0, 0, mapCanvas.width, mapCanvas.height);
+
                 this.isIntro = true; this.tanks = []; introPlanes = [];
                 configs.forEach((cfg) => {
                     let randX = 150 + Math.random() * (canvas.width - 300);
@@ -580,6 +652,9 @@
             startTurn() {
                 if (this.isIntro || this.isGameOver) return;
                 this.turnTimer = 30; this.isShooting = false; this.upWpBtn();
+                
+                // ガソリン全回復
+                if (this.tanks[this.turnIdx]) { this.tanks[this.turnIdx].gas = this.tanks[this.turnIdx].maxGas; }
                 document.getElementById("debugLog").innerText = `🎮 ターン交代: ${this.tanks[this.turnIdx].name}`;
             }
             nextTurn() {
@@ -588,7 +663,7 @@
                 do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
                 this.startTurn();
             }
-            clickPassBtn() { if (!this.isShooting && bullets.length === 0) this.nextTurn(); }
+            clickPassBtn() { if (!this.isShooting && bullets.length === 0 && !this.isGameOver) this.nextTurn(); }
             selWp(type) { selWpType = type; this.upWpBtn(); canvas.focus(); }
             upWpBtn() { for (let i = 0; i <= 5; i++) { const btn = document.getElementById(`wp${i}`); if (btn) btn.classList.toggle("active", selWpType === i); } }
             checkGameOver() {
@@ -603,36 +678,85 @@
                     this.tanks.forEach(t => { if(t.hasSpawned) t.update(false); if(t.isDropping || !t.hasSpawned) finished = false; });
                     if (finished) { this.isIntro = false; this.startTurn(); } return;
                 }
-                if (!this.isShooting && bullets.length === 0) { this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } }
+                
+                // 🛑 修正：誰かが落下死、または通常死した時にゲームが止まるバグを完全解消
+                // 毎フレーム生存チェックを行い、現在の手番プレイヤーが死亡していたら即座に次のターンへ移行
+                if (!this.isGameOver) {
+                    let currentTank = this.tanks[this.turnIdx];
+                    if (currentTank && currentTank.hp <= 0) {
+                        this.nextTurn();
+                        return;
+                    }
+                    let alive = this.tanks.filter(t => t.hp > 0);
+                    if (alive.length <= 1) { this.checkGameOver(); return; }
+                }
+
+                if (!this.isShooting && bullets.length === 0 && !this.isGameOver) { 
+                    this.turnTimer -= dt; 
+                    if (this.turnTimer <= 0) { this.nextTurn(); return; } 
+                }
+                
                 this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
                 for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(); if (bullets[i].isDead) bullets.splice(i, 1); }
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
-                if (this.isShooting && bullets.length === 0) { this.isShooting = false; this.nextTurn(); }
+                if (this.isShooting && bullets.length === 0 && !this.isGameOver) { this.isShooting = false; this.nextTurn(); }
             }
             draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 let imgBg = ImageAssets.backgrounds[selectedStageObj.id];
                 if (imgBg && imgBg.complete && imgBg.width > 0) ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height);
-                else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); } 
                 ctx.drawImage(mapCanvas, 0, 0); this.tanks.forEach(t => t.draw());
                 bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
                 particles.forEach(p => p.draw());
+                
+                // 🛑 復元：現在の手番プレイヤーを「赤枠」と「赤▼」で強調表示するUI処理
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
-                    ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
-                    ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(t.name, bx + 71, 24);
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8); if (t.hp > 0) { ctx.fillStyle = "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6); if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
+                    let isCurrentTurn = (idx === this.turnIdx && !this.isIntro && !this.isGameOver);
+                    
+                    ctx.save();
+                    // 手番なら赤枠(3px)、そうでなければ透明な黒背景
+                    if (isCurrentTurn) {
+                        ctx.fillStyle = "rgba(40,0,0,0.85)";
+                        ctx.fillRect(bx, 10, 142, 65);
+                        ctx.strokeStyle = "#ff3333";
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(bx, 10, 142, 65);
+                    } else {
+                        ctx.fillStyle = "rgba(0,0,0,0.6)";
+                        ctx.fillRect(bx, 10, 142, 65);
+                    }
+                    
+                    // 名前の描画（手番なら頭に赤の▼を付ける）
+                    ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+                    let displayName = t.name;
+                    if (isCurrentTurn) {
+                        ctx.fillStyle = "#ff3333";
+                        ctx.font = "bold 12px sans-serif";
+                        displayName = "▼ " + displayName;
+                    }
+                    ctx.fillText(displayName, bx + 71, 24);
+                    
+                    // HPバー
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8); 
+                    if (t.hp > 0) { ctx.fillStyle = isCurrentTurn ? "#ff3333" : "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
+                    
+                    // ガソリンバー
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6); 
+                    if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
+                    
+                    // タイマー表示（手番プレイヤーのみ秒数を出す）
+                    if (isCurrentTurn && !this.isShooting && bullets.length === 0) {
+                        ctx.fillStyle = "#ffcc00"; ctx.font = "bold 10px monospace"; ctx.textAlign = "right";
+                        ctx.fillText(`${Math.ceil(this.turnTimer)}s`, bx + 132, 62);
+                    }
                     ctx.restore();
                 });
             }
         }
 
         function startGame() { 
-            if (loadedImages < totalImages) {
-                alert(`現在、画像を読み込み中です。少々お待ちください (${loadedImages}/${totalImages})`);
-                return;
-            }
             document.getElementById("menuScreen").style.display = "none"; 
             window.G = new Game(finalPlayersSetup); runGame(); 
         }
