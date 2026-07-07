@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
-    <title>動物戦車 おもちゃの大乱闘【完全修正・デグレ徹底排除版】</title>
+    <title>動物戦車 おもちゃの大乱闘【全キャラ固有弾・調整版】</title>
     <style>
         body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
         #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
@@ -32,6 +32,7 @@
         
         .nav-btn { width: 100%; background: #28a745; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 15px; }
         .nav-btn.prev { background: #6c757d; }
+        .team-Red { color: #ff4d4d; } .team-Blue { color: #4d94ff; } .team-Yellow { color: #ffdd4d; } .team-Green { color: #4dff4d; }
         
         #battleUiContainer { max-width: 1200px; margin: 5px auto; background: #333; padding: 10px; border-radius: 8px; box-sizing: border-box; }
         #weaponPanel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; background: #222; padding: 6px; border-radius: 6px; }
@@ -49,6 +50,7 @@
         #centerControls { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
         #powerGaugeWrapper { position: relative; width: 100%; height: 28px; background-color: #111; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
         #powerBar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9100, #ff3d00); }
+        #powerMarker { position: absolute; top: 0; width: 4px; height: 100%; background-color: rgba(25, 25, 255, 0.75); box-shadow: 0 0 6px #fff; display: none; pointer-events: none; }
         #powerText { position: absolute; top: 0; left: 10px; line-height: 28px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
         
         #padFire { background: #d9534f; border: 2px solid #d43f3a; height: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
@@ -57,7 +59,7 @@
 </head>
 <body>
 
-    <div id="debugLog">⏳ 資産画像を読み込み中...</div>
+    <div id="debugLog">⏳ 画像アセットを読み込み中...</div>
     <button id="returnMenuBtn" onclick="returnToMenu()">🏠 タイトルメニューに戻る</button>
 
     <div id="menuScreen">
@@ -85,8 +87,7 @@
                 </div>
                 <div class="section-title">🗺️ ステージ選択（全12ステージ）</div>
                 <div class="flex-row">
-                    <select id="selectStageId" style="width: 100%; background: #3a3a52; color: #fff; border: 2px solid #555575; padding: 12px; font-size: 16px; border-radius: 10px;" onchange="selectMap(this.value)">
-                    </select>
+                    <select id="selectStageId" style="width: 100%; background: #3a3a52; color: #fff; border: 2px solid #555575; padding: 12px; font-size: 16px; border-radius: 10px;" onchange="selectMap(this.value)"></select>
                 </div>
                 <div class="flex-row" style="margin-top:20px;">
                     <button class="nav-btn prev" onclick="goToStep(1)">⬅️ 戻る</button>
@@ -125,6 +126,7 @@
             <div id="centerControls">
                 <div id="powerGaugeWrapper">
                     <div id="powerBar"></div>
+                    <div id="powerMarker"></div>
                     <div id="powerText">パワー: 0%</div>
                 </div>
                 <div class="angle-column">
@@ -138,22 +140,25 @@
 
     <script>
         const CharacterData = {
-            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 12, color: "#3388ff", numCode: "01" },
-            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 12, color: "#ff66cc", numCode: "02" },
-            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 8, color: "#8b5a2b", numCode: "03" }, 
-            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 12, color: "#ff9933", numCode: "04" },
-            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 16, color: "#aaaaaa", numCode: "05" },
-            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 12, color: "#4e3629", numCode: "06" },
-            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 16, color: "#111111", numCode: "07" },
+            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 10, color: "#3388ff", numCode: "01" },
+            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 10, color: "#ff66cc", numCode: "02" },
+            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 6, color: "#8b5a2b", numCode: "03" }, 
+            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 10, color: "#ff9933", numCode: "04" },
+            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 14, color: "#aaaaaa", numCode: "05" },
+            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 10, color: "#4e3629", numCode: "06" },
+            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 14, color: "#111111", numCode: "07" },
             "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#00ccff", numCode: "08" },
-            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 12, color: "#c2b280", numCode: "09" },
-            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 12, color: "#ffffff", numCode: "10" },
-            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 14, color: "#4dff4d", numCode: "11" },
-            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 8, color: "#228b22", numCode: "12" },  
-            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 10, color: "#a0522d", numCode: "13" },
-            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 12, color: "#708090", numCode: "14" }
+            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 10, color: "#c2b280", numCode: "09" },
+            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 10, color: "#ffffff", numCode: "10" },
+            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 12, color: "#4dff4d", numCode: "11" },
+            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 6, color: "#228b22", numCode: "12" },  
+            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 8, color: "#a0522d", numCode: "13" },
+            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 10, color: "#708090", numCode: "14" }
         };
 
+        // ============================================================
+        // 🖼️ 画像アセット管理（index.html由来／非同期プリロード）
+        // ============================================================
         const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {} };
 
         const MapStages = [
@@ -171,32 +176,46 @@
             { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon" }
         ];
 
+        // アイテム出現上限は「絵柄の系統(type)」に紐付け（従来のhill/canyon/flatの調整値を維持）
+        const MapConfigs = { "hill": { maxItems: 3 }, "canyon": { maxItems: 2 }, "flat": { maxItems: 4 } };
+
+        // 🌟 総画像枚数を読み込み開始「前」に確定（デグレ防止：カウンタのズレを起こさない）
         let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2);
         let loadedImages = 0;
 
         function onImageLoad() {
             loadedImages++;
+            const log = document.getElementById("debugLog");
             if (loadedImages >= totalImages) {
-                document.getElementById("debugLog").innerText = "🎮 アセット確認完了！いつでも大乱闘を開始できます。";
+                log.innerText = "🎮 全ての画像アセットの読み込みが完了しました。いつでも大乱闘を開始できます。";
             } else {
-                document.getElementById("debugLog").innerText = `⏳ 画像資産を通信中... (${loadedImages}/${totalImages})`;
+                log.innerText = `⏳ 画像アセットを読み込み中... (${loadedImages}/${totalImages})`;
             }
         }
 
         Object.keys(CharacterData).forEach(key => {
             const code = CharacterData[key].numCode;
-            ImageAssets.tanks[key] = new Image(); ImageAssets.tanks[key].onload = onImageLoad; ImageAssets.tanks[key].onerror = onImageLoad; ImageAssets.tanks[key].src = `assets/images/${code}.png`;
-            ImageAssets.turrets[key] = new Image(); ImageAssets.turrets[key].onload = onImageLoad; ImageAssets.turrets[key].onerror = onImageLoad; ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
+            ImageAssets.tanks[key] = new Image();
+            ImageAssets.tanks[key].onload = onImageLoad; ImageAssets.tanks[key].onerror = onImageLoad;
+            ImageAssets.tanks[key].src = `assets/images/${code}.png`;
+
+            ImageAssets.turrets[key] = new Image();
+            ImageAssets.turrets[key].onload = onImageLoad; ImageAssets.turrets[key].onerror = onImageLoad;
+            ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
         });
 
         MapStages.forEach(st => {
-            ImageAssets.stages[st.id] = new Image(); ImageAssets.stages[st.id].onload = onImageLoad; ImageAssets.stages[st.id].onerror = onImageLoad; ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
-            ImageAssets.backgrounds[st.id] = new Image(); ImageAssets.backgrounds[st.id].onload = onImageLoad; ImageAssets.backgrounds[st.id].onerror = onImageLoad; ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
+            ImageAssets.stages[st.id] = new Image();
+            ImageAssets.stages[st.id].onload = onImageLoad; ImageAssets.stages[st.id].onerror = onImageLoad;
+            ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
+
+            ImageAssets.backgrounds[st.id] = new Image();
+            ImageAssets.backgrounds[st.id].onload = onImageLoad; ImageAssets.backgrounds[st.id].onerror = onImageLoad;
+            ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
         });
+        // ============================================================
 
-        const stageSelect = document.getElementById("selectStageId");
-        MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
-
+        const Teams = ["Red", "Blue", "Yellow", "Green"];
         let selectedStageObj = MapStages[0];
         let selectedRuleMode = 'solo';
         let animationFrameId = null;
@@ -213,7 +232,16 @@
         }
         validateCounts();
 
-        function selectMap(stageId) { selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0]; }
+        function selectMap(stageId) {
+            selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0];
+        }
+
+        // ステージ選択プルダウンの初期構築
+        (function initStageSelectUI() {
+            const stageSelect = document.getElementById("selectStageId");
+            MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
+        })();
+
         function selectRule(r) {
             selectedRuleMode = r;
             document.getElementById('ruleSolo').classList.toggle('selected', r === 'solo');
@@ -221,7 +249,24 @@
         }
 
         let finalPlayersSetup = [];
-        const Teams = ["Red", "Blue", "Yellow", "Green"];
+
+        function checkLineOfSight(startX, startY, endX, endY) {
+            let steps = Math.ceil(Math.max(Math.abs(endX - startX), Math.abs(endY - startY)));
+            for (let i = 0; i <= steps; i += 4) {
+                let t = i / steps;
+                let cx = Math.floor(startX + (endX - startX) * t);
+                let cy = startY + (endY - startY) * t;
+                // 🌟 2Dビットマップ地形対応：高さ配列ではなく、その点が地面かどうかを直接判定
+                // （空洞・オーバーハングのあるマップでも正しく視線が通る/遮られる）
+                if (isGround(cx, cy)) return false;
+                for (let tree of treeObjects) {
+                    if (Math.abs(cx - tree.x) < (tree.w / 2) && cy >= (tree.y - tree.h) && cy <= tree.y) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
 
         function goToStep(step) {
             if (step === 3) {
@@ -230,8 +275,14 @@
                 finalPlayersSetup = [];
                 let idCounter = 1;
                 let charKeys = Object.keys(CharacterData);
-                for(let i=0; i<hCount; i++) { finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] }); idCounter++; }
-                for(let i=0; i<cCount; i++) { finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] }); idCounter++; }
+                for(let i=0; i<hCount; i++) {
+                    finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    idCounter++;
+                }
+                for(let i=0; i<cCount; i++) {
+                    finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    idCounter++;
+                }
                 buildStep3UI();
             }
             document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
@@ -243,11 +294,11 @@
             finalPlayersSetup.forEach((p, idx) => {
                 const card = document.createElement("div"); card.className = "entry-card";
                 let charOpts = ""; Object.keys(CharacterData).forEach(k => { charOpts += `<option value="${k}" ${p.charKey === k ? 'selected' : ''}>${CharacterData[k].name}</option>`; });
-                let teamOpts = ""; Teams.forEach(t => { teamOpts += `<option value="${t}" ${p.team === t ? 'selected' : ''}>${t} チーム</option>`; });
-                let teamSelectorHTML = selectedRuleMode === 'team' ? `<select onchange="finalPlayersSetup[${idx}].team = this.value">${teamOpts}</select>` : `<div style="font-size:11px; color:#888; margin-top:8px;">⚔️ 個人戦</div>`;
+                let teamOpts = ""; Teams.forEach(t => { teamOpts += `<option value="${t}" ${p.team === t ? 'selected' : ''} class="team-${t}">${t} チーム</option>`; });
+                let teamSelectorHTML = selectedRuleMode === 'team' ? `<select onchange="finalPlayersSetup[${idx}].team = this.value" class="team-${p.team}">${teamOpts}</select>` : `<div style="font-size:11px; color:#888; margin-top:8px;">⚔️ 個人戦</div>`;
 
                 card.innerHTML = `
-                    <div style="font-size:11px;font-weight:bold;color:#0ff;">${p.type === 'HUMAN' ? `👤 ${p.id}P` : `🤖 ${p.id}P`}</div>
+                    <div style="font-size:11px;font-weight:bold;color:#0ff;">${p.type === 'HUMAN' ? `👤 ${p.id}P (Player)` : `🤖 ${p.id}P (CPU)`}</div>
                     <div class="avatar-placeholder" id="avatar-${idx}">✨</div>
                     <select onchange="updateCardColor(${idx}, this.value)">${charOpts}</select>
                     ${teamSelectorHTML}
@@ -259,7 +310,7 @@
         function updateCardColor(idx, key) {
             finalPlayersSetup[idx].charKey = key;
             const ph = document.getElementById(`avatar-${idx}`);
-            if(ph) { ph.style.color = CharacterData[key].color; ph.innerText = `🚗 ${CharacterData[key].name}`; }
+            if(ph) { ph.style.color = CharacterData[key].color; ph.innerText = `🚗 ${CharacterData[key].name} [HP:${CharacterData[key].hp}]`; }
         }
 
         function returnToMenu() {
@@ -273,18 +324,22 @@
 
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        
-        let terrainMap = []; let bullets = []; let particles = []; let introPlanes = [];
+        // 🌟 地形は「x座標ごとの高さ」ではなく、画像alphaベースの2Dビットマップで管理
+        // （M0x.pngの空中足場・オーバーハング・空洞をそのまま当たり判定に反映するため）
+        let terrainMap = []; let bullets = []; let particles = []; let introPlanes = []; let supplyItems = [];
+        let visualEffects = []; let treeObjects = [];
 
+        // 地形の見た目＋当たり判定の実体。M0x.pngをそのまま描画し、削れば穴が開く／盛れば復元する。
         const mapCanvas = document.createElement("canvas");
         const mapCtx = mapCanvas.getContext("2d");
         mapCanvas.width = 1200; mapCanvas.height = 600;
+        let currentStageImg = null; // reshapeColumn(盛る側)で元画像から復元するために保持
 
         const keyInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
         const padInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
 
         window.addEventListener("keydown", (e) => {
-            if (window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
+            if (window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
             if (e.code === "ArrowLeft")  { keyInputs.left = true;  e.preventDefault(); }
             if (e.code === "ArrowRight") { keyInputs.right = true; e.preventDefault(); }
             if (e.code === "ArrowUp")    { keyInputs.up = true;    e.preventDefault(); }
@@ -299,12 +354,12 @@
             if (e.code === "Space") { if (keyInputs.firePressed) { keyInputs.firePressed = false; keyInputs.fireReleased = true; } e.preventDefault(); }
         });
 
-        function initInputBinds() {
+        function initHybridInputBinds() {
             const bindBtn = (id, key) => {
-                const btn = document.getElementById(id); if(!btn) return;
+                const btn = document.getElementById(id);
                 const press = (e) => { 
                     e.preventDefault(); canvas.focus(); 
-                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
+                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
                     padInputs[key] = true; 
                 };
                 const release = (e) => { e.preventDefault(); padInputs[key] = false; };
@@ -315,67 +370,160 @@
             bindBtn("btnLeft", "left"); bindBtn("btnRight", "right"); bindBtn("btnUp", "up"); bindBtn("btnDown", "down");
 
             const fBtn = document.getElementById("padFire");
-            if(fBtn) {
-                const fPress = (e) => { 
-                    e.preventDefault(); canvas.focus(); 
-                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0 || window.G.isGameOver)) return; 
-                    if (!padInputs.firePressed && !padInputs.fireReleased) padInputs.firePressed = true; 
-                };
-                const fRelease = (e) => { e.preventDefault(); if (padInputs.firePressed) { padInputs.firePressed = false; padInputs.fireReleased = true; } };
-                fBtn.addEventListener("touchstart", fPress); fBtn.addEventListener("touchend", fRelease);
-                fBtn.addEventListener("mousedown", fPress);  fBtn.addEventListener("mouseup", fRelease);
-            }
+            const fPress = (e) => { 
+                e.preventDefault(); canvas.focus(); 
+                if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+                if (!padInputs.firePressed && !padInputs.fireReleased) padInputs.firePressed = true; 
+            };
+            const fRelease = (e) => { e.preventDefault(); if (padInputs.firePressed) { padInputs.firePressed = false; padInputs.fireReleased = true; } };
+            fBtn.addEventListener("touchstart", fPress); fBtn.addEventListener("touchend", fRelease);
+            fBtn.addEventListener("mousedown", fPress);  fBtn.addEventListener("mouseup", fRelease);
         }
 
-        function buildTerrainFromLoadedImage(img, stageType) {
-            terrainMap = Array.from({ length: canvas.width }, () => new Int8Array(canvas.height).fill(0));
-            let parsedFully = false;
-            if (img && img.complete && img.width > 0) {
-                try {
-                    let tempCanvas = document.createElement("canvas"); tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-                    let tempCtx = tempCanvas.getContext("2d"); tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    let imgData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    for (let x = 0; x < canvas.width; x++) {
-                        for (let y = 0; y < canvas.height; y++) { if (imgData[(y * canvas.width + x) * 4 + 3] > 10) { terrainMap[x][y] = 1; } }
-                    }
-                    parsedFully = true;
-                } catch (e) { console.warn("CORS制限などのため自動地形で代用します。"); }
-            }
-            if (!parsedFully) {
-                mapCtx.fillStyle = "#228b22"; 
+        // 🌟 画像のアルファチャンネルから2Dビットマップ地形を構築する（index.html由来）
+        function buildTerrainFromLoadedImage(img) {
+            terrainMap = Array.from({ length: canvas.width }, () => new Uint8Array(canvas.height).fill(0));
+            currentStageImg = img;
+            mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+            try {
+                if (!img || !img.complete || img.width === 0) throw new Error("image not ready");
+                mapCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                let imgData = mapCtx.getImageData(0, 0, canvas.width, canvas.height).data;
                 for (let x = 0; x < canvas.width; x++) {
-                    let surfaceY = canvas.height - 140;
-                    if (stageType === "hill") surfaceY = Math.floor(canvas.height - 180 + Math.sin(x * 0.005) * 80 + Math.sin(x * 0.02) * 20);
-                    else if (stageType === "canyon") surfaceY = Math.floor(canvas.height - 160 + Math.sin(x * 0.008) * 120 + Math.cos(x * 0.03) * 30);
-                    else if (stageType === "flat") surfaceY = canvas.height - 100;
+                    for (let y = 0; y < canvas.height; y++) {
+                        let aIdx = (y * canvas.width + x) * 4 + 3;
+                        if (imgData[aIdx] > 10) terrainMap[x][y] = 1;
+                    }
+                }
+            } catch (e) {
+                // 🌟 画像が万一読めない場合のフォールバック：従来のプロシージャル地形を2D化して継続
+                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+                mapCtx.fillStyle = "#6b8e23";
+                for (let x = 0; x < canvas.width; x++) {
+                    let type = selectedStageObj.type;
+                    let surfaceY;
+                    if (type === 'flat') surfaceY = 450;
+                    else if (type === 'canyon') {
+                        let mid = canvas.width / 2; let dist = Math.abs(x - mid);
+                        surfaceY = Math.max(200, Math.min(canvas.height - 20, 430 + (140 * (1 - dist / mid))));
+                    } else {
+                        surfaceY = Math.max(150, Math.min(canvas.height - 20, 410 + Math.sin(x * 0.006) * 55 + Math.cos(x * 0.02) * 12));
+                    }
+                    surfaceY = Math.floor(surfaceY);
                     mapCtx.fillRect(x, surfaceY, 1, canvas.height - surfaceY);
-                    for (let y = surfaceY; y < canvas.height; y++) { terrainMap[x][y] = 1; }
+                    for (let y = surfaceY; y < canvas.height; y++) terrainMap[x][y] = 1;
                 }
             }
+            treeObjects = [];
         }
 
+        // 指定座標が地面（不透明ピクセル）かどうかを判定。空洞・オーバーハングも正しく扱える。
         function isGround(x, y) {
             let tx = Math.floor(x); let ty = Math.floor(y);
             if (tx < 0 || tx >= canvas.width || ty < 0 || ty >= canvas.height) return false;
             return terrainMap[tx][ty] === 1;
         }
 
-        function damageTerrain(cx, cy, radius) {
-            if (radius <= 0) return; cx = Math.floor(cx); cy = Math.floor(cy);
-            for (let x = cx - radius; x <= cx + radius; x++) {
-                if (x < 0 || x >= canvas.width) continue;
-                for (let y = cy - radius; y <= cy + radius; y++) {
-                    if (y < 0 || y >= canvas.height) continue;
-                    if ((x - cx)*(x - cx) + (y - cy)*(y - cy) <= radius * radius) { terrainMap[x][y] = 0; }
+        // 🌟 アダプター関数：旧「terrain[x] = 表面のY座標」への参照を置き換える。
+        // fromYが既に地面の中ならその地面の"天井"を、空中ならそこから下方向へ最初の地面を探す。
+        function findSurfaceY(x, fromY, maxScan = 400) {
+            let tx = Math.floor(x);
+            if (tx < 0 || tx >= canvas.width) return fromY;
+            let y = Math.max(0, Math.min(canvas.height - 1, Math.floor(fromY)));
+            if (isGround(tx, y)) {
+                let steps = 0;
+                while (y > 0 && isGround(tx, y - 1) && steps < maxScan) { y--; steps++; }
+                return y;
+            } else {
+                let steps = 0;
+                while (y < canvas.height - 1 && !isGround(tx, y) && steps < maxScan) { y++; steps++; }
+                return y;
+            }
+        }
+
+        // 地形を掘る（既存の呼び出しシグネチャ・ダメージ計算ロジックはベース版を完全維持）
+        function damageTerrain(cx, cy, radius, maxDmg = 25, subBulletTracker = null) {
+            if (radius <= 0) return 0;
+            cx = Math.floor(cx); cy = Math.floor(cy);
+            if (cx < -radius || cx >= canvas.width + radius) return 0;
+
+            for (let i = treeObjects.length - 1; i >= 0; i--) {
+                let tree = treeObjects[i];
+                let distToTree = Math.hypot(tree.x - cx, (tree.y - tree.h/2) - cy);
+                if (distToTree < (radius + 25)) treeObjects.splice(i, 1);
+            }
+
+            // ビットマップ上に円形の穴を開ける＋見た目（mapCanvas）も同時にくり抜く
+            for (let x = Math.max(0, cx - radius); x < Math.min(canvas.width, cx + radius); x++) {
+                for (let y = Math.max(0, cy - radius); y < Math.min(canvas.height, cy + radius); y++) {
+                    let dx = x - cx; let dy = y - cy;
+                    if (dx * dx + dy * dy <= radius * radius) terrainMap[x][y] = 0;
                 }
             }
             mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
             mapCtx.beginPath(); mapCtx.arc(cx, cy, radius, 0, Math.PI * 2); mapCtx.fill(); mapCtx.restore();
-            for (let i = 0; i < radius * 0.3; i++) {
-                particles.push(new Particle(cx + (Math.random() * radius * 2 - radius), cy + (Math.random() * radius - radius / 2), Math.random() * 4 - 2, Math.random() * -4 - 1, "#ff6600", Math.random() * 3 + 1));
+
+            for (let i = 0; i < radius * 0.5; i++) {
+                particles.push(new Particle(cx + (Math.random() * radius * 2 - radius), cy + (Math.random() * radius - radius / 2), Math.random() * 4 - 2, Math.random() * -4 - 1, "#ff6600", Math.random() * 3 + 2));
             }
-            // 🛑 修正：地形破壊後に空中浮遊するバグの対策。全戦車の接地判定を即時更新して落下させる
-            if (window.G && window.G.tanks) { window.G.tanks.forEach(t => t.checkGroundStatus()); }
+            let totalHitDamage = 0;
+            if (window.G) {
+                window.G.tanks.forEach(t => {
+                    if (t.hp > 0 && t.hasSpawned) {
+                        let dist = Math.hypot(t.x - cx, (t.y - 12) - cy);
+                        let limitDist = radius + 15; 
+                        if (dist < limitDist) {
+                            let falloff = (limitDist - dist) / limitDist;
+                            let finalDmg = Math.floor(maxDmg * falloff);
+                            if (finalDmg > 0) {
+                                if (subBulletTracker) {
+                                    if (!subBulletTracker.hasHitTanks) subBulletTracker.hasHitTanks = [];
+                                    if (subBulletTracker.hasHitTanks.includes(t.id)) {
+                                        finalDmg = 3; 
+                                    } else {
+                                        subBulletTracker.hasHitTanks.push(t.id);
+                                    }
+                                }
+                                t.hp = Math.max(0, t.hp - finalDmg);
+                                totalHitDamage += finalDmg;
+                                t.checkGroundStatus();
+                            }
+                        }
+                    }
+                });
+                window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
+            }
+            return totalHitDamage;
+        }
+
+        // 🦔 1カラム(x座標1列)単位で地表の高さを再構成する（ML-06の掘削／TT-12の盛り土で使用）
+        // newSurfaceYが現在より大きい＝掘る、小さい＝盛る、として旧terrain[x]書き換えロジックを再現する
+        function reshapeColumn(x, cy, newSurfaceY) {
+            x = Math.floor(x);
+            if (x < 0 || x >= canvas.width) return;
+            let oldSurfaceY = findSurfaceY(x, cy);
+            let top = Math.floor(Math.min(oldSurfaceY, newSurfaceY));
+            let bottom = Math.floor(Math.max(oldSurfaceY, newSurfaceY));
+            if (bottom <= top) return;
+            let makeGround = (newSurfaceY < oldSurfaceY);
+            for (let y = top; y < bottom; y++) {
+                if (y < 0 || y >= canvas.height) continue;
+                terrainMap[x][y] = makeGround ? 1 : 0;
+            }
+            if (makeGround) {
+                mapCtx.save(); mapCtx.beginPath(); mapCtx.rect(x, top, 1, bottom - top); mapCtx.clip();
+                // 🌟 まず土色で下地を塗る（元画像がここでは透明＝空だった場合の保険）
+                mapCtx.globalCompositeOperation = 'source-over';
+                mapCtx.fillStyle = "#6b8e23"; mapCtx.fillRect(x, top, 1, bottom - top);
+                // その上に元画像を重ねる。元々ここが地形だった場合はそちらの絵柄が優先して見える
+                if (currentStageImg && currentStageImg.complete && currentStageImg.width > 0) {
+                    mapCtx.drawImage(currentStageImg, 0, 0, canvas.width, canvas.height);
+                }
+                mapCtx.restore();
+            } else {
+                mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
+                mapCtx.fillRect(x, top, 1, bottom - top); mapCtx.restore();
+            }
         }
 
         class IntroPlane {
@@ -395,47 +543,302 @@
             draw() { if (this.life <= 0) return; ctx.save(); ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
         }
 
+        class RingEffect {
+            constructor(x, y, radius, color, type = "wave") { 
+                this.x = x; this.y = y; this.targetRadius = radius; this.color = color; this.type = type;
+                this.currentRadius = (type === "pull") ? radius : 0; this.life = 1.0; 
+            }
+            update() { 
+                if (this.type === "pull") {
+                    this.currentRadius -= this.targetRadius * 0.05;
+                    if (this.currentRadius < 5) this.currentRadius = this.targetRadius;
+                } else { this.currentRadius += (this.targetRadius - this.currentRadius) * 0.15; }
+                this.life -= 0.03; 
+            }
+            draw() {
+                if (this.life <= 0) return;
+                ctx.save(); ctx.globalAlpha = this.life; ctx.strokeStyle = this.color; ctx.lineWidth = (this.type === "pull") ? 2 : 4;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class SupplyItem { constructor(x, y, type) { this.x = x; this.y = y; this.type = type; } }
+
+        class ItemDropPlane {
+            constructor(targetX, itemType) { this.x = -100; this.y = 40; this.speed = 10; this.targetX = targetX; this.itemType = itemType; this.hasDropped = false; }
+            update() {
+                this.x += this.speed;
+                if (!this.hasDropped && this.x >= this.targetX) { this.hasDropped = true; supplyItems.push(new SupplyItem(this.x, 40, this.itemType)); }
+            }
+            draw() { ctx.fillStyle = "#88f"; ctx.fillRect(this.x - 25, this.y - 6, 50, 12); }
+        }
+
+        function drawItemEmoji(ctx, s) {
+            let emoji = "🎁";
+            if (s.type === "apple") emoji = "🍏";
+            if (s.type === "trap_apple") emoji = "🌰"; 
+            if (s.type === "medkit") emoji = "🧰";
+            if (s.type === "gas") emoji = "🛢️";
+            if (s.type === "bomb") emoji = "💣";
+            ctx.fillText(emoji, s.x, s.y + 8); // 1.5倍化に伴う表示座標微調整
+        }
+
         class Bullet {
             constructor(x, y, vx, vy, color, type, owner) {
                 this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.type = type; this.owner = owner;
-                this.radius = 5; this.isDead = false; this.lifeFrame = 0;
-            }
-            update() {
-                this.lifeFrame++; this.vy += 0.23; this.x += this.vx; this.y += this.vy;
-                if (this.x < -50 || this.x >= canvas.width + 50 || this.y > canvas.height + 50) { this.isDead = true; return; }
-                let skipCollision = (this.lifeFrame <= 5 && Math.hypot(this.x - this.owner.x, this.y - this.owner.y) < 35);
-                let hitTerrain = !skipCollision && isGround(this.x, this.y);
-                let hitTank = null;
-                window.G.tanks.forEach(t => {
-                    if (t.hp > 0 && t.hasSpawned) {
-                        if (skipCollision && t.id === this.owner.id) return;
-                        if (Math.hypot(t.x - this.x, this.y - t.y) < (this.radius + 20)) hitTank = t;
-                    }
-                });
-                if (hitTank || hitTerrain) this.explode(this.x, this.y); 
-            }
-            explode(cx, cy) {
-                this.isDead = true;
-                if (this.type === 1) { damageTerrain(cx, cy, 19); }
-                else if (this.type === 2) { damageTerrain(cx, cy, 25); }
-                else if (this.type === 3) { damageTerrain(cx, cy, 56); }
-                else if (this.type === 4) { this.owner.x = cx; this.owner.y = cy; this.owner.checkGroundStatus(); }
-                else { damageTerrain(cx, cy, 32); }
+                this.radius = 5; this.gravity = 0.25; this.isDead = false; this.bounceCount = 0; this.isFrogSubBullet = false; 
                 
-                // 被弾ダメージ判定
-                window.G.tanks.forEach(t => {
-                    if (t.hp > 0 && t.hasSpawned) {
-                        let dist = Math.hypot(t.x - cx, t.y - cy);
-                        let range = this.type === 3 ? 65 : 40;
-                        if (dist < range) {
-                            let dmg = Math.floor((1 - dist / range) * (this.type === 2 ? 45 : 30));
-                            if (dmg > 0) {
-                                t.hp -= dmg; if(t.hp < 0) t.hp = 0;
-                                document.getElementById("debugLog").innerText = `💥 ${t.name} に ${dmg} のダメージ！`;
-                            }
+                if (this.type === 5 && this.owner.charKey === "BR-03") { this.gravity = 0.45; this.radius = 8; }
+                if (this.type === 5 && this.owner.charKey === "PG-08") { this.gravity = 0.25; this.radius = 7; }
+                if (this.type === 5 && this.owner.charKey === "XX-10") { this.radius = 8; }
+                if (this.type === 5 && this.owner.charKey === "GK-13") { this.radius = 7; }
+            }
+
+            update(windPower) {
+                let windFactor = (this.type === 3) ? 0 : 0.15;
+                if (this.type === 5 && this.owner.charKey === "BR-03") windFactor = 0.02; 
+                
+                this.vx += windPower * windFactor * 0.05;
+                this.vy += this.gravity; this.x += this.vx; this.y += this.vy;
+
+                if (this.x < -100 || this.x >= canvas.width + 100 || this.y > canvas.height + 100) { this.isDead = true; return; }
+
+                let tx = Math.floor(this.x); let hitTerrain = false;
+                if (tx >= 0 && tx < canvas.width && isGround(this.x, this.y)) {
+                    if (!(this.type === 5 && this.owner.charKey === "XX-10")) hitTerrain = true;
+                }
+
+                let hitTree = null;
+                if (!(this.type === 5 && this.owner.charKey === "XX-10")) {
+                    for (let tree of treeObjects) {
+                        if (Math.abs(this.x - tree.x) < (tree.w / 2) && this.y >= (tree.y - tree.h) && this.y <= tree.y) {
+                            hitTree = tree; break;
                         }
                     }
+                }
+
+                let hitTank = null;
+                window.G.tanks.forEach(t => {
+                    if (t.hp > 0 && t.id !== this.owner.id && t.hasSpawned) {
+                        let dist = Math.hypot(t.x - this.x, this.y - (t.y - 12));
+                        if (dist < (this.radius + 12)) hitTank = t;
+                    }
                 });
+
+                if (this.type === 5 && this.owner.charKey === "XX-10") {
+                    if (hitTank) { this.explode(this.x, this.y); }
+                    return; 
+                }
+
+                // 🐶 イヌ固有弾：索敵範囲を少し狭めてマイルドに（400 → 260）
+                if (this.type === 5 && this.owner.charKey === "DO-04" && this.vy >= 0) {
+                    let closestEnemy = null; let minDist = 260; 
+                    window.G.tanks.forEach(t => {
+                        if (t.hp > 0 && t.id !== this.owner.id && (selectedRuleMode === 'solo' || t.team !== this.owner.team) && t.hasSpawned) {
+                            let d = Math.hypot(t.x - this.x, t.y - this.y);
+                            if (d < minDist) { minDist = d; closestEnemy = t; }
+                        }
+                    });
+                    if (closestEnemy) {
+                        let dx = closestEnemy.x - this.x; let dy = (closestEnemy.y - 12) - this.y;
+                        let dist = Math.hypot(dx, dy);
+                        if (dist > 0) {
+                            this.vx = (this.vx * 0.82) + (dx / dist) * 3.5 * 0.06;
+                            this.vy = (this.vy * 0.82) + (dy / dist) * 3.5 * 0.06;
+                        }
+                    }
+                }
+
+                if (this.type === 5 && this.owner.charKey === "GK-13") {
+                    if (hitTank || hitTerrain || hitTree) {
+                        // 🌟 衝突検出時点の(x,y)は既に地表付近なので、terrain[tx]の代わりにそのまま使う
+                        let currentSurfaceY = this.y;
+                        let baseDamage = 30 - (this.bounceCount * 5); 
+                        if (baseDamage < 5) baseDamage = 5;
+
+                        let currentRadius = (this.bounceCount >= 4) ? 10 : 0;
+                        damageTerrain(this.x, currentSurfaceY, currentRadius, baseDamage);
+
+                        this.bounceCount++;
+                        if (this.bounceCount >= 5) { this.isDead = true; } 
+                        else {
+                            if (hitTerrain) this.y = findSurfaceY(this.x, this.y) - 4;
+                            let randomAngle = -Math.PI/4 - Math.random() * Math.PI/2; 
+                            let bounceSpeed = 4 + Math.random() * 5; 
+                            this.vx = Math.cos(randomAngle) * bounceSpeed;
+                            this.vy = Math.sin(randomAngle) * bounceSpeed;
+                        }
+                        return;
+                    }
+                    return;
+                }
+
+                if (this.type === 5 && this.owner.charKey === "PG-08") {
+                    if (hitTank) { this.explode(this.x, this.y); return; }
+                    if (hitTerrain) {
+                        this.bounceCount++;
+                        let surfaceY = findSurfaceY(this.x, this.y);
+                        if (this.bounceCount >= 6) { this.explode(this.x, surfaceY); } 
+                        else {
+                            this.y = surfaceY - 4;
+                            // 局所的な傾斜を左右2点の地表Yの差から求める（terrain[tx±2]の代替）
+                            let slope = 0;
+                            if (tx > 2 && tx < canvas.width - 2) {
+                                slope = (findSurfaceY(tx + 2, surfaceY) - findSurfaceY(tx - 2, surfaceY)) * 0.1;
+                            }
+                            this.vy = -Math.abs(this.vy) * 0.80; this.vx = (this.vx - slope * 1.5) * 0.85; 
+                        }
+                        return;
+                    }
+                    return;
+                }
+
+                if (hitTank || hitTerrain || hitTree) { 
+                    this.explode(this.x, this.y); 
+                }
+            }
+
+            explode(cx, cy) {
+                this.isDead = true; let log = document.getElementById("debugLog");
+
+                if (this.isFrogSubBullet) { 
+                    damageTerrain(cx, cy, 15, 15, window.G?.frogTracker); 
+                    return; 
+                }
+                if (this.type === 0) { damageTerrain(cx, cy, 25, 25); return; }
+                if (this.type === 1) { damageTerrain(cx, cy, 15, 45); return; }
+                if (this.type === 2) { damageTerrain(cx, cy, 20, 15); return; }
+                if (this.type === 3) { damageTerrain(cx, cy, 45, 35); return; }
+                if (this.type === 4) { 
+                    this.owner.x = cx; this.owner.y = cy; this.owner.checkGroundStatus();
+                    log.innerText = `🌀 ワープ弾着弾！自身をテレポートさせました。`; return;
+                }
+
+                let char = this.owner.charKey;
+                
+                if (char === "CA-01") { 
+                    damageTerrain(cx, cy, 25, 22);
+                    if (this.owner.nekoCombo) {
+                        window.G.isShooting = false;
+                        log.innerText = `🐾【ネコ】固有技発動！2発目の通常弾をチャージして発射してください！`;
+                    } else { window.G.isShooting = false; window.G.nextTurn(); }
+                    return;
+                }
+                if (char === "RA-02") { 
+                    let totalDmg = damageTerrain(cx, cy, 30, 20);
+                    if (totalDmg > 0) { this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + Math.floor(totalDmg * 0.5)); } 
+                    else { this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + 5); }
+                    return;
+                }
+                if (char === "BR-03") { damageTerrain(cx, cy, 50, 65); return; }
+                if (char === "DO-04") { damageTerrain(cx, cy, 28, 26); return; }
+                if (char === "RT-05") { 
+                    damageTerrain(cx, cy, 30, 10); let deepY = findSurfaceY(cx, cy);
+                    this.owner.x = cx; this.owner.y = deepY; this.owner.checkGroundStatus(); return;
+                }
+                if (char === "XX-10") { damageTerrain(cx, cy, 30, 35); return; }
+                if (char === "PG-08") { damageTerrain(cx, cy, 45, 40); return; }
+                
+                if (char === "CR-07") { 
+                    visualEffects.push(new RingEffect(cx, cy, 125, "rgba(120, 0, 255, 0.7)", "pull")); 
+                    window.G.tanks.forEach(t => {
+                        if (t.hp > 0 && t.hasSpawned) {
+                            let dist = Math.hypot(t.x - cx, (t.y - 12) - cy);
+                            if (dist < 125) {
+                                if (!checkLineOfSight(cx, cy, t.x, t.y - 12)) return;
+                                t.hp = Math.max(0, t.hp - Math.floor(25 * (125 - dist) / 125));
+                                t.x += (t.x > cx ? -1 : 1) * (60 * (125 - dist) / 125); t.checkGroundStatus();
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                if (char === "ML-06") { 
+                    cx = Math.floor(cx);
+                    if (cx >= 0 && cx < canvas.width) {
+                        for (let x = Math.max(0, cx - 25); x < Math.min(canvas.width, cx + 25); x++) {
+                            let depth = Math.sqrt(Math.max(0, 25 * 25 - (x - cx) * (x - cx))) * 2.5; 
+                            let oldSurfaceY = findSurfaceY(x, cy);
+                            reshapeColumn(x, cy, Math.max(50, oldSurfaceY - depth));
+                        }
+                    }
+                    window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
+                    return;
+                }
+                
+                // 🦝 タヌキ固有：角度反転デグレード修正、盛り上げカット、木を頑丈に(34x75 → 50x90)
+                if (char === "RD-09") { 
+                    cx = Math.floor(cx); let baseSurfaceY = findSurfaceY(cx, cy);
+                    damageTerrain(cx, cy, 20, 10); 
+                    
+                    // 左右反転の方向を飛んできた速度(弾道)から正しく計算
+                    let treeTilt = (this.vx > 0) ? 0.35 : -0.35;
+                    treeObjects.push({ x: cx, y: baseSurfaceY, w: 50, h: 90, angle: treeTilt }); 
+                    
+                    let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
+                    if (supplyItems.length < currentLimit) {
+                        let lx = Math.max(0, cx - 35);
+                        supplyItems.push({ x: Math.max(10, cx - 35), y: findSurfaceY(lx, cy) - 15, type: "trap_apple", ownerId: this.owner.id });
+                    }
+                    if (supplyItems.length < currentLimit) {
+                        let rx = Math.min(canvas.width - 1, cx + 35);
+                        supplyItems.push({ x: Math.min(canvas.width - 10, cx + 35), y: findSurfaceY(rx, cy) - 15, type: "trap_apple", ownerId: this.owner.id });
+                    }
+                    window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
+                    return;
+                }
+
+                if (char === "TT-12") { 
+                    cx = Math.floor(cx);
+                    for (let x = Math.max(0, cx - 55); x < Math.min(canvas.width, cx + 55); x++) {
+                        let diff = Math.abs(x - cx);
+                        let oldSurfaceY = findSurfaceY(x, cy);
+                        if (diff > 25) { reshapeColumn(x, cy, Math.min(canvas.height - 20, oldSurfaceY + 45)); } 
+                        else { reshapeColumn(x, cy, Math.max(100, oldSurfaceY - 25)); } 
+                    }
+                    window.G.tanks.forEach(t => { if(t.hasSpawned) t.checkGroundStatus(); });
+                    return;
+                }
+                
+                if (char === "WF-14") { 
+                    visualEffects.push(new RingEffect(cx, cy, 125, "rgba(0, 255, 255, 0.8)", "wave")); 
+                    window.G.tanks.forEach(t => {
+                        if (t.hp > 0 && t.hasSpawned) {
+                            let dist = Math.hypot(t.x - cx, (t.y - 12) - cy);
+                            if (dist < 125) {
+                                if (!checkLineOfSight(cx, cy, t.x, t.y - 12)) return;
+                                t.hp = Math.max(0, t.hp - Math.floor(15 * (125 - dist) / 125));
+                                t.x += (t.x > cx ? 1 : -1) * (150 * (125 - dist) / 125); t.checkGroundStatus();
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                // 🐸 カエル固有：拡散幅を20度狭め「100度拡散」にナロー化
+                if (char === "FG-11") {
+                    damageTerrain(cx, cy, 20, 20);
+                    let tx = Math.floor(cx);
+                    let leftY = findSurfaceY(Math.max(0, tx - 5), cy);
+                    let rightY = findSurfaceY(Math.min(canvas.width - 1, tx + 5), cy);
+                    let surfaceAngle = Math.atan2(rightY - leftY, 10); 
+                    let normalAngle = surfaceAngle - Math.PI / 2;
+
+                    if (window.G) window.G.frogTracker = { hasHitTanks: [] };
+                    
+                    let subCount = 5;
+                    for (let i = 0; i < subCount; i++) {
+                        let progress = (i / (subCount - 1)) - 0.5;
+                        let spread = normalAngle + progress * (Math.PI * 100 / 180) + (Math.random() * 0.2 - 0.1); 
+                        let subSpeed = 5 + Math.random() * 4;
+                        let subB = new Bullet(cx, cy - 6, Math.cos(spread) * subSpeed, Math.sin(spread) * subSpeed, "#4dff4d", 5, this.owner);
+                        subB.isFrogSubBullet = true; 
+                        bullets.push(subB);
+                    }
+                    return;
+                }
+                damageTerrain(cx, cy, 25, 25);
             }
         }
 
@@ -446,240 +849,376 @@
                 this.maxHp = s.hp; this.hp = s.hp; this.maxGas = s.gas; this.gas = s.gas; this.climbLimit = s.climb;
                 this.facingDir = num <= 4 ? 1 : -1; this.angle = this.facingDir === 1 ? -Math.PI / 4 : -3 * Math.PI / 4;
                 this.chargePower = 2; this.chargeDirection = 1; this.isCharging = false;
-                this.cpuThinkTimer = 0; // 🛑 CPUの暴発防止用ウェイトタイマー
+                this.ammo = { wp1: 1, wp2: 1, wp3: 1, wp4: 1, wp5: 1 }; this.lastPower = null;
+                this.nekoCombo = false;
             }
-            checkGroundStatus() { if (!this.hasSpawned) return; if (!isGround(this.x, this.y + 16)) this.isDropping = true; }
-            updatePosition() {
+            
+            checkGroundStatus() {
                 if (!this.hasSpawned) return;
-                if (!isGround(this.x, this.y + 16)) { this.isDropping = true; } 
-                else { while(isGround(this.x, this.y + 15)) { this.y--; } this.vy = 0; this.isDropping = false; }
-                if (this.y >= canvas.height + 20 || this.x < -40 || this.x > canvas.width + 40) { 
-                    if (this.hp > 0) { this.hp = 0; document.getElementById("debugLog").innerText = `💀 ${this.name} がステージから落下した！`; }
+                let tx = Math.floor(this.x);
+                // 🌟 自分のY座標を起点に「今いる足場」の地表を探す（空中足場・オーバーハング対応）
+                if (tx >= 0 && tx < canvas.width) { if (this.y < findSurfaceY(tx, this.y) - 2) this.isDropping = true; }
+            }
+
+            updatePosition(checkCliff = false, prevX = 0) {
+                if (!this.hasSpawned) return;
+                let tx = Math.floor(this.x);
+                if (tx >= 0 && tx < canvas.width) {
+                    let targetY = findSurfaceY(tx, this.y);
+                    if (checkCliff && (this.y - targetY > this.climbLimit)) { this.x = prevX; return; }
+                    if (this.y < targetY - 4) { this.isDropping = true; } 
+                    else if (this.y >= targetY - 4) { this.y = targetY; this.vy = 0; this.isDropping = false; }
+                } else { this.y += 4; }
+                
+                if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) {
+                    if (this.hp > 0) { this.hp = 0; document.getElementById("debugLog").innerText = `💀【落下死】${this.name} がリングアウトしました。`; }
                 }
             }
+
             constrainAngle() {
-                if (this.facingDir === 1) { this.angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.angle)); } 
-                else {
+                if (this.facingDir === 1) {
+                    this.angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.angle));
+                } else {
                     if (this.angle < -Math.PI * 1.5) this.angle += Math.PI * 2;
                     if (this.angle > Math.PI * 0.5) this.angle -= Math.PI * 2;
-                    if (this.angle > -Math.PI / 2 && this.angle <= Math.PI * 0.5) this.angle = this.angle > 0 ? Math.PI * 0.5 : -Math.PI / 2;
-                    else this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
+                    if (this.angle > -Math.PI / 2 && this.angle <= Math.PI * 0.5) {
+                        this.angle = this.angle > 0 ? Math.PI * 0.5 : -Math.PI / 2;
+                    } else {
+                        this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
+                    }
                 }
             }
-            update(myTurn, dt) {
-                if (!this.hasSpawned) return;
-                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(); return; }
-                this.updatePosition(); if (this.hp <= 0) return;
-                if (!myTurn) return; this.constrainAngle();
 
-                // パワーゲージ制御（人間）
+            update(myTurn) {
+                if (!this.hasSpawned) return;
+                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(false); return; }
+                this.updatePosition(false); if (this.hp <= 0) return;
+
+                // 🎁 アイテムの回収判定を1.5倍に拡張（22 → 32）
+                for (let i = supplyItems.length - 1; i >= 0; i--) {
+                    let item = supplyItems[i]; let itx = Math.floor(item.x);
+                    if (itx >= 0 && itx < canvas.width) {
+                        let itemSurfaceY = findSurfaceY(itx, item.y);
+                        if (item.y < itemSurfaceY) { item.y += 4; if(item.y > itemSurfaceY) item.y = itemSurfaceY; }
+                    }
+                    if (Math.hypot(this.x - item.x, (this.y - 6) - item.y) < 32) {
+                        supplyItems.splice(i, 1);
+                        if (item.type === "apple") this.hp = Math.min(this.maxHp, this.hp + 25);
+                        else if (item.type === "medkit") this.hp = Math.min(this.maxHp, this.hp + 50);
+                        else if (item.type === "gas") this.gas = Math.min(this.maxGas, this.gas + 50);
+                        else if (item.type === "trap_apple") {
+                            if (item.ownerId === this.id || (window.G?.tanks.find(t=>t.id===item.ownerId)?.team === this.team && selectedRuleMode === 'team')) {
+                                this.hp = Math.min(this.maxHp, this.hp + 25); 
+                            } else { this.hp = Math.max(0, this.hp - 10); }
+                        }
+                    }
+                }
+
+                if (!myTurn) return;
+
+                this.constrainAngle();
+
                 if (this.isCharging && !this.isCpu) {
-                    this.chargePower += 0.15 * this.chargeDirection;
-                    if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
-                    if (this.chargePower <= 2) { this.chargePower = 2; this.chargeDirection = 1; }
                     let pct = ((this.chargePower - 2) / 10) * 100;
                     document.getElementById("powerBar").style.width = `${pct}%`;
                     document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
                 }
 
-                // 🛑 修正：CPUの行動ロジック（思考ウェイトを完全に復元）
                 if (this.isCpu) {
-                    if (!window.G.isShooting && bullets.length === 0) {
-                        if (this.cpuThinkTimer < 1.5) {
-                            this.cpuThinkTimer += dt;
-                            // じわじわ相手の方向を向く
-                            let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
-                            if (target) {
-                                let targetAngle = Math.atan2(target.y - this.y, target.x - this.x);
-                                this.facingDir = target.x > this.x ? 1 : -1;
-                                this.angle = targetAngle;
+                    if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
+                        let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && (selectedRuleMode === 'solo' || t.team !== this.team) && t.hasSpawned);
+                        if (!target) target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned); 
+                        if (target) { 
+                            let baseAng = Math.atan2((target.y-12)-(this.y-12), target.x-this.x);
+                            if (target.x < this.x && this.facingDir === 1) {
+                                if (this.gas >= 10) { this.gas -= 10; this.facingDir = -1; this.angle = -Math.PI - this.angle; }
+                            } else if (target.x > this.x && this.facingDir === -1) {
+                                if (this.gas >= 10) { this.gas -= 10; this.facingDir = 1; this.angle = -Math.PI - this.angle; }
                             }
-                        } else if (!this.isCharging) {
-                            this.isCharging = true;
-                            this.chargePower = 4.5 + Math.random() * 5.5;
-                        } else {
-                            this.isCharging = false;
-                            this.cpuThinkTimer = 0;
-                            window.G.isShooting = true;
-                            this.fire(this.chargePower);
+                            this.angle = baseAng + (Math.random()*0.1-0.05);
                         }
-                    }
+                        this.isCharging = true; this.chargePower = 4 + Math.random()*6;
+                    } else if (this.isCharging) { this.isCharging = false; window.G.isShooting = true; this.fire(this.chargePower); }
                     return;
                 }
 
-                // 人間プレイヤーの操作（キーボード＋スマホパッドの長押し対応連動）
-                let moveLeft = keyInputs.left || padInputs.left; 
-                let moveRight = keyInputs.right || padInputs.right;
-                let angleUp = keyInputs.up || padInputs.up; 
-                let angleDown = keyInputs.down || padInputs.down;
+                let moveLeft = keyInputs.left || padInputs.left; let moveRight = keyInputs.right || padInputs.right;
+                let angleUp = keyInputs.up || padInputs.up; let angleDown = keyInputs.down || padInputs.down;
                 let firePressed = keyInputs.firePressed || padInputs.firePressed;
                 let fireReleased = keyInputs.fireReleased || padInputs.fireReleased;
-                let reverseCost = 20 - this.climbLimit; 
 
-                if (moveLeft && this.facingDir === 1) { 
-                    if (this.gas >= reverseCost) { this.gas -= reverseCost; this.facingDir = -1; this.angle = -Math.PI - this.angle; } else { moveLeft = false; }
+                let turnCost = 20 - this.climbLimit; 
+                if (moveLeft && this.facingDir === 1) {
+                    if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = -1; this.angle = -Math.PI - this.angle; } else { moveLeft = false; } 
                 }
-                if (moveRight && this.facingDir === -1) { 
-                    if (this.gas >= reverseCost) { this.gas -= reverseCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { moveRight = false; }
+                if (moveRight && this.facingDir === -1) {
+                    if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { moveRight = false; }
                 }
-                if (firePressed && !window.G.isShooting && bullets.length === 0 && !this.isCharging) {
-                    this.isCharging = true; this.chargePower = 2; this.chargeDirection = 1;
-                }
-                if (fireReleased && this.isCharging) {
-                    keyInputs.fireReleased = false; padInputs.fireReleased = false; this.isCharging = false;
-                    window.G.isShooting = true; this.fire(this.chargePower); this.chargePower = 2; this.chargeDirection = 1;
-                    document.getElementById("powerBar").style.width = "0%"; document.getElementById("powerText").textContent = "パワー: 0%"; return;
+
+                if (firePressed && !window.G.isShooting && bullets.length === 0) {
+                    this.isCharging = true; this.chargePower += 0.25 * this.chargeDirection;
+                    if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
+                    if (this.chargePower <= 2) { this.chargePower = 2; this.chargeDirection = 1; }
                 }
                 
-                // 不正な瞬間移動壁登り防止物理
+                if (fireReleased && this.isCharging) {
+                    keyInputs.fireReleased = false; padInputs.fireReleased = false; this.isCharging = false;
+                    if (window.G.isShooting || bullets.length > 0) return; 
+                    window.G.isShooting = true; this.fire(this.chargePower);
+                    this.chargePower = 2; this.chargeDirection = 1;
+                    document.getElementById("powerBar").style.width = "0%";
+                    document.getElementById("powerText").textContent = "パワー: 0%"; return;
+                }
+
                 if (!this.isCharging) {
                     if (this.gas >= 0.4 && (moveLeft || moveRight)) {
-                        let dir = moveLeft ? -1 : 1; let nextX = this.x + dir * 2.5;
-                        let foundGround = false; let targetY = this.y;
-                        for (let dy = -16; dy <= 16; dy++) {
-                            if (isGround(nextX, this.y + dy + 16) && !isGround(nextX, this.y + dy + 15)) { targetY = this.y + dy; foundGround = true; break; }
-                        }
-                        if (foundGround) {
-                            let heightDiff = this.y - targetY;
-                            if (heightDiff > 0 && heightDiff > this.climbLimit) { /* 登坂限界越えはストップ */ } 
-                            else { this.x = nextX; this.y = targetY; this.gas -= 0.4; }
-                        } else { this.x = nextX; this.gas -= 0.4; }
-                        this.updatePosition();
+                        let dir = moveLeft ? -1 : 1; this.gas -= 0.4;
+                        let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
                     }
                     if (this.gas >= 0.2 && (angleUp || angleDown)) {
                         this.gas -= 0.2;
-                        if (this.facingDir === 1) { if (angleUp) this.angle -= 0.03; if (angleDown) this.angle += 0.03; } 
-                        else { if (angleUp) this.angle += 0.03; if (angleDown) this.angle -= 0.03; }
+                        if (this.facingDir === 1) {
+                            if (angleUp) this.angle -= 0.03; if (angleDown) this.angle += 0.03;
+                        } else { 
+                            if (angleUp) this.angle += 0.03; if (angleDown) this.angle -= 0.03; 
+                        }
                         this.constrainAngle();
                     }
                 }
             }
 
             fire(power) {
-                let wp = selWpType || 0;
-                const bx = this.x + Math.cos(this.angle) * 28; const by = (this.y + 16) + Math.sin(this.angle) * 28; 
-                let vel = power * 1.35; 
-                bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, wp, this));
+                this.lastPower = power; let wp = selWpType || 0;
+                
+                if (wp === 5 && this.charKey === "BR-03") { 
+                    this.hp -= 20; 
+                    if (this.hp <= 0) { this.hp = 0; window.G.nextTurn(); return; } 
+                }
+                if (wp === 5 && this.charKey === "GK-13") { 
+                    this.hp = Math.max(1, this.hp - 10); 
+                    this.gas = Math.max(0, this.gas - 10); 
+                }
+                if (wp === 5 && this.charKey === "RT-05") { this.gas = 0; }
+                if (wp === 5 && this.charKey === "WF-14") { this.gas = Math.max(0, this.gas - 50); }
+
+                if (this.charKey === "CA-01") {
+                    if (wp === 5) { this.nekoCombo = true; this.ammo["wp5"] = 0; selWpType = 0; } 
+                    else if (this.nekoCombo) { this.nekoCombo = false; }
+                } else { if (wp !== 0) this.ammo["wp" + wp]--; }
+
+                const bx = this.x + Math.cos(this.angle) * 22;
+                const by = this.y - 12 + Math.sin(this.angle) * 22;
+                let vel = power * 1.30; 
+
+                if (wp === 2) { 
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => { if (this.hp > 0) bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, 2, this)); }, i * 300);
+                    }
+                } else {
+                    let b = new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, wp, this);
+                    bullets.push(b);
+                }
+                if (this.charKey !== "CA-01") selWpType = 0;
+                window.G.upWpBtn();
             }
 
             draw() {
                 if (this.hp <= 0 || !this.hasSpawned) return;
                 ctx.save(); ctx.translate(this.x, this.y);
+
                 let imgTank = ImageAssets.tanks[this.charKey]; let imgTurret = ImageAssets.turrets[this.charKey];
-                if (imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0) {
+                let hasImg = imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0;
+
+                if (hasImg) {
+                    // 画像のアスペクト比を保ったまま描画サイズを決定（画像ごとに縦横比が異なるため）
+                    let tankH = 34, tankW = tankH * (imgTank.width / imgTank.height);
+                    let turretW = 30, turretH = turretW * (imgTurret.height / imgTurret.width);
+
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, 5); let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
-                    ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -6, -10, 30, 16); ctx.restore();
-                    ctx.drawImage(imgTank, -22, -18, 44, 35); ctx.restore();
+                    ctx.save(); ctx.translate(0, 5);
+                    let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
+                    ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -6, -turretH / 2, turretW, turretH); ctx.restore();
+                    ctx.drawImage(imgTank, -tankW / 2, -18, tankW, tankH); ctx.restore();
                 } else {
-                    ctx.strokeStyle = "#444"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 8); 
-                    ctx.lineTo(Math.cos(this.angle) * 28, 8 + Math.sin(this.angle) * 28); ctx.stroke();
-                    ctx.fillStyle = this.color; ctx.fillRect(-22, -12, 44, 15); ctx.fillStyle = "#333"; ctx.fillRect(-26, 3, 52, 15);
+                    // 🌟 画像未ロード時のフォールバック：従来のベクター描画で見た目を保証
+                    ctx.strokeStyle = "#444"; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(Math.cos(this.angle)*22, -12 + Math.sin(this.angle)*22); ctx.stroke();
+                    ctx.fillStyle = this.color; ctx.fillRect(-16, -14, 32, 10); 
+                    ctx.fillStyle = "#333"; ctx.fillRect(-19, -5, 38, 6);
                 }
-                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textBaseline = "bottom"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42); ctx.restore();
+
+                ctx.fillStyle = (selectedRuleMode === 'team') ? (this.team === "Red"?"#ff4d4d":this.team === "Blue"?"#4d94ff":this.team === "Yellow"?"#ffdd4d":"#4dff4d") : "#fff";
+                ctx.beginPath(); ctx.arc(0, -18, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -32);
+
+                if (window.G && window.G.tanks[window.G.turnIdx] === this && !window.G.isIntro && !window.G.isGameOver) {
+                    let bobbing = Math.sin(performance.now() * 0.01) * 3; 
+                    ctx.fillStyle = "#ff3333";
+                    ctx.beginPath(); ctx.moveTo(0, -50 + bobbing); ctx.lineTo(-6, -58 + bobbing); ctx.lineTo(6, -58 + bobbing); ctx.closePath(); ctx.fill();
+                }
+                ctx.restore();
             }
         }
 
         class Game {
             constructor(configs) {
-                let imgMap = ImageAssets.stages[selectedStageObj.id];
-                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
-                buildTerrainFromLoadedImage(imgMap, selectedStageObj.type);
-
-                this.isIntro = true; this.tanks = []; introPlanes = [];
+                buildTerrainFromLoadedImage(ImageAssets.stages[selectedStageObj.id]);
+                this.isIntro = true; this.tanks = []; introPlanes = []; supplyItems = []; visualEffects = [];
                 configs.forEach((cfg) => {
                     let randX = 150 + Math.random() * (canvas.width - 300);
                     let pName = cfg.type === 'HUMAN' ? `${cfg.id}P:${CharacterData[cfg.charKey].name}` : `🤖:${CharacterData[cfg.charKey].name}`;
                     let t = new Tank(0, cfg.charKey, pName, `P${cfg.id}`, cfg.type === 'CPU', cfg.team, cfg.id);
                     this.tanks.push(t); introPlanes.push(new IntroPlane(randX, t));
                 });
-                this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30; this.lastTime = performance.now(); this.isGameOver = false;
-                initInputBinds();
+                this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30; this.windPower = 0;
+                this.lastTime = performance.now(); this.isGameOver = false; this.frogTracker = null;
             }
+
+            updatePowerMarker(tank) {
+                const marker = document.getElementById("powerMarker");
+                if (tank && !tank.isCpu && tank.lastPower !== null) {
+                    let pct = ((tank.lastPower - 2) / 10) * 100; marker.style.left = `${pct}%`; marker.style.display = "block";
+                } else { marker.style.display = "none"; }
+            }
+
             startTurn() {
                 if (this.isIntro || this.isGameOver) return;
-                this.turnTimer = 30; this.isShooting = false; this.upWpBtn();
-                if (this.tanks[this.turnIdx]) { this.tanks[this.turnIdx].gas = this.tanks[this.turnIdx].maxGas; this.tanks[this.turnIdx].cpuThinkTimer = 0; }
-                document.getElementById("debugLog").innerText = `🎮 ターン交代: ${this.tanks[this.turnIdx].name}`;
+                let currentTank = this.tanks[this.turnIdx]; currentTank.nekoCombo = false;
+                currentTank.gas = Math.min(currentTank.maxGas, currentTank.gas + 30);
+                this.turnTimer = 30; this.isShooting = false;
+                this.windPower = Math.floor(Math.random() * 11) - 5;
+                this.updatePowerMarker(currentTank);
+                document.getElementById("debugLog").innerText = `🎮 ${currentTank.name} のターン！`;
+                selWpType = 0; this.upWpBtn();
+                
+                let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
+                if (Math.random() < 0.25 && supplyItems.length < currentLimit) {
+                    let randX = 100 + Math.random() * (canvas.width - 200); let r = Math.random() * 100;
+                    let type = "apple";
+                    if (r < 35) type = "apple"; else if (r < 50) type = "medkit"; else if (r < 75) type = "gas"; else if (r < 90) type = "apple"; else type = "bomb";
+                    introPlanes.push(new ItemDropPlane(randX, type));
+                }
             }
+
             nextTurn() {
-                bullets = []; this.isShooting = false;
+                bullets = []; this.isShooting = false; this.frogTracker = null;
                 let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
                 do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
                 this.startTurn();
             }
-            clickPassBtn() { if (!this.isShooting && bullets.length === 0 && !this.isGameOver) this.nextTurn(); }
-            selWp(type) { selWpType = type; this.upWpBtn(); canvas.focus(); }
-            upWpBtn() { for (let i = 0; i <= 5; i++) { const btn = document.getElementById(`wp${i}`); if (btn) btn.classList.toggle("active", selWpType === i); } }
+
+            clickPassBtn() { if (!this.isShooting && bullets.length === 0) this.nextTurn(); }
+            
+            selWp(type) {
+                let currentTank = this.tanks[this.turnIdx];
+                if (currentTank.nekoCombo && type !== 0) return;
+                if (type !== 0 && currentTank.ammo["wp" + type] <= 0) { document.getElementById("debugLog").innerText = `⚠️ 弾切れです！`; return; }
+                selWpType = type; this.upWpBtn(); canvas.focus();
+            }
+
+            upWpBtn() {
+                let currentTank = this.tanks[this.turnIdx]; if (!currentTank) return;
+                const names = ["通常弾", "狙撃弾", "三連弾", "鉄球弾", "ワープ弾", "固有弾"];
+                for (let i = 0; i <= 5; i++) {
+                    const btn = document.getElementById(`wp${i}`); if (!btn) continue;
+                    if (i === 0) { btn.disabled = currentTank.isCpu; btn.classList.toggle("active", selWpType === 0); }
+                    else {
+                        let num = currentTank.ammo["wp" + i]; btn.innerText = `${names[i]}(${num})`;
+                        if (currentTank.charKey === "CA-01" && currentTank.nekoCombo) { btn.disabled = true; } 
+                        else { btn.disabled = (num <= 0 || currentTank.isCpu); }
+                        btn.classList.toggle("active", selWpType === i);
+                    }
+                }
+            }
+
             checkGameOver() {
                 let alive = this.tanks.filter(t => t.hp > 0); this.isGameOver = true;
-                document.getElementById("debugLog").innerText = alive.length > 0 ? `🏆 【${alive[0].name}】 の勝利！` : `💀 引き分け`;
+                document.getElementById("debugLog").innerText = alive.length > 0 ? `🏆 【${alive[0].name}】 の大勝利！！！` : `💀 引き分けです。`;
                 document.getElementById("returnMenuBtn").style.display = "block";
             }
+
             update() {
                 let now = performance.now(); let dt = (now - this.lastTime) / 1000; this.lastTime = now;
                 if (this.isIntro) {
                     let finished = true; introPlanes.forEach(p => { p.update(); if(!p.hasDropped) finished = false; });
-                    this.tanks.forEach(t => { if(t.hasSpawned) t.update(false, dt); if(t.isDropping || !t.hasSpawned) finished = false; });
+                    this.tanks.forEach(t => { if(t.hasSpawned) t.update(false); if(t.isDropping || !t.hasSpawned) finished = false; });
                     if (finished) { this.isIntro = false; this.startTurn(); } return;
                 }
+                let currentTank = this.tanks[this.turnIdx]; let isNekoComboing = (currentTank && currentTank.charKey === "CA-01" && currentTank.nekoCombo);
+                if (!this.isShooting && bullets.length === 0 && !isNekoComboing) { this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } }
                 
-                // 生存者確認＆死亡フリーズ対策
-                if (!this.isGameOver) {
-                    let currentTank = this.tanks[this.turnIdx];
-                    if (currentTank && currentTank.hp <= 0) { this.nextTurn(); return; }
-                    let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
-                }
-
-                if (!this.isShooting && bullets.length === 0 && !this.isGameOver) { 
-                    this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } 
-                }
-                
-                this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx, dt); });
-                for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(); if (bullets[i].isDead) bullets.splice(i, 1); }
+                this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
+                introPlanes.forEach(p => p.update()); 
+                for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(this.windPower); if (bullets[i].isDead) bullets.splice(i, 1); }
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
-                if (this.isShooting && bullets.length === 0 && !this.isGameOver) { this.isShooting = false; this.nextTurn(); }
+                for (let i = visualEffects.length - 1; i >= 0; i--) { visualEffects[i].update(); if (visualEffects[i].life <= 0) visualEffects.splice(i, 1); }
+                
+                if (this.isShooting && bullets.length === 0) {
+                    if (currentTank && currentTank.charKey === "CA-01" && currentTank.nekoCombo) { this.isShooting = false; selWpType = 0; this.upWpBtn(); } 
+                    else { this.isShooting = false; this.nextTurn(); }
+                }
             }
+
             draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 let imgBg = ImageAssets.backgrounds[selectedStageObj.id];
-                if (imgBg && imgBg.complete && imgBg.width > 0) ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height);
-                else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); } 
-                ctx.drawImage(mapCanvas, 0, 0); this.tanks.forEach(t => t.draw());
+                if (imgBg && imgBg.complete && imgBg.width > 0) { ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height); }
+                else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+                // 🌟 地形(M0x.png)はmapCanvasに描画済み。damageTerrain/reshapeColumnで穴あけ・復元が反映される
+                ctx.drawImage(mapCanvas, 0, 0);
+
+                treeObjects.forEach(tree => {
+                    ctx.save(); ctx.translate(tree.x, tree.y); ctx.rotate(tree.angle); 
+                    ctx.fillStyle = "#8B4513"; ctx.fillRect(-(tree.w / 6), -tree.h, tree.w / 3, tree.h);
+                    ctx.fillStyle = "#228B22"; ctx.fillRect(-(tree.w / 2), -tree.h - 15, tree.w, tree.w);
+                    ctx.fillStyle = "#32CD32"; ctx.fillRect(-(tree.w / 3), -tree.h - 25, (tree.w / 3) * 2, tree.w * 0.6);
+                    ctx.restore();
+                });
+
+                // 🎁 アイテムの大きさを1.5倍（font 24px）にして描画
+                supplyItems.forEach(s => { ctx.save(); ctx.font = "24px sans-serif"; ctx.textAlign = "center"; drawItemEmoji(ctx, s); ctx.restore(); });
+                this.tanks.forEach(t => t.draw()); introPlanes.forEach(p => p.draw());
                 bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
-                particles.forEach(p => p.draw());
+                particles.forEach(p => p.draw()); visualEffects.forEach(e => e.draw());
                 
-                // 枠と手番▼表示UI
+                if (!this.isGameOver && !this.isIntro) {
+                    let currentTank = this.tanks[this.turnIdx];
+                    let infoStr = `⏱️ TIME: ${Math.ceil(this.turnTimer)}s  |  🍃 WIND: ${this.windPower}`;
+                    if (currentTank && currentTank.charKey === "CA-01" && currentTank.nekoCombo) { infoStr = `🐾 ネコ連続行動中！(残り通常弾 1発)  |  🍃 WIND: ${this.windPower}`; }
+                    ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(canvas.width/2 - 150, 85, 300, 35);
+                    ctx.fillStyle = "#fff"; ctx.font = "bold 13px monospace"; ctx.textAlign = "center"; ctx.fillText(infoStr, canvas.width/2, 106);
+                }
+
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
-                    let isCurrentTurn = (idx === this.turnIdx && !this.isIntro && !this.isGameOver);
-                    ctx.save();
-                    if (isCurrentTurn) {
-                        ctx.fillStyle = "rgba(40,0,0,0.85)"; ctx.fillRect(bx, 10, 142, 65);
-                        ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 3; ctx.strokeRect(bx, 10, 142, 65);
-                    } else {
-                        ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
-                    }
-                    ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
-                    let displayName = t.name;
-                    if (isCurrentTurn) { ctx.fillStyle = "#ff3333"; ctx.font = "bold 12px sans-serif"; displayName = "▼ " + displayName; }
-                    ctx.fillText(displayName, bx + 71, 24);
+                    ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
+                    let isMyTurn = (idx === this.turnIdx && !this.isGameOver && !this.isIntro && t.hp > 0);
+                    let displayName = t.hp > 0 ? (isMyTurn ? `${t.name} ⚡` : t.name) : `💀 ${t.name}`;
                     
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8); 
-                    if (t.hp > 0) { ctx.fillStyle = isCurrentTurn ? "#ff3333" : "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6); 
-                    if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
+                    ctx.fillStyle = (selectedRuleMode === 'team') ? (t.team === "Red"?"#ff4d4d":this.team === "Blue"?"#4d94ff":this.team === "Yellow"?"#ffdd4d":"#4dff4d") : "#fff";
+                    ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(displayName, bx + 71, 27);
                     
-                    if (isCurrentTurn && !this.isShooting && bullets.length === 0) {
-                        ctx.fillStyle = "#ffcc00"; ctx.font = "bold 10px monospace"; ctx.textAlign = "right";
-                        ctx.fillText(`${Math.ceil(this.turnTimer)}s`, bx + 132, 62);
-                    }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 35, 124, 10);
+                    if (t.hp > 0) { ctx.fillStyle = t.hp > 40 ? "#0f0" : "#f33"; ctx.fillRect(bx + 8, 35, (t.hp / t.maxHp) * 124, 10); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 51, 124, 5);
+                    if (t.hp > 0) { ctx.fillStyle = "#ffaa00"; ctx.fillRect(bx + 8, 51, (t.gas / t.maxGas) * 124, 5); }
+                    
+                    if (isMyTurn) { ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 3; ctx.strokeRect(bx - 2, 9, 146, 67); }
                     ctx.restore();
                 });
             }
         }
 
-        function startGame() { document.getElementById("menuScreen").style.display = "none"; window.G = new Game(finalPlayersSetup); runGame(); }
+        initHybridInputBinds();
+        function startGame() {
+            // 🌟 画像読み込み完了前にゲームを開始させない（requestAnimationFrameもこの後でしか走らない）
+            if (loadedImages < totalImages) {
+                alert(`現在、画像を読み込み中です。少々お待ちください (${loadedImages}/${totalImages})`);
+                return;
+            }
+            document.getElementById("menuScreen").style.display = "none";
+            window.G = new Game(finalPlayersSetup); runGame();
+        }
         function runGame() { window.G.update(); window.G.draw(); animationFrameId = requestAnimationFrame(runGame); }
     </script>
 </body>
