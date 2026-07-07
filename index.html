@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
+    <title>動物戦車 おもちゃの大乱闘【画像完全同期・GitHub Pages対応版】</title>
+    <style>
+        body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
+        #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
+        canvas { background: #87CEEB; border: 3px solid #555; display: block; margin: 5px auto; max-width: 100%; height: auto; }
+        
+        #menuScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(25, 25, 35, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 100; overflow-y: auto; padding: 20px 0; box-sizing: border-box; }
+        .menu-container { background: #2d2d3d; padding: 25px; border-radius: 16px; border: 4px solid #4e4e6e; max-width: 900px; width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.8); box-sizing: border-box; }
+        h2.title { text-align: center; color: #0ff; margin: 0 0 20px 0; font-size: 24px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        .section-title { color: #ffaa00; border-left: 5px solid #ffaa00; padding-left: 10px; margin: 20px 0 12px 0; text-align: left; font-size: 16px; font-weight: bold; }
+        
+        .step-panel { display: none; }
+        .step-panel.active { display: block; }
+        .flex-row { display: flex; gap: 15px; justify-content: center; margin-bottom: 15px; }
+        .num-input-group { background: #222232; padding: 15px; border-radius: 10px; border: 2px solid #444; flex: 1; min-width: 140px; }
+        .num-input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #ccc; }
+        .num-input-group select { width: 100%; background: #444; color: #fff; border: 1px solid #666; padding: 8px; font-size: 16px; border-radius: 6px; }
+        .select-btn { flex: 1; background: #3a3a52; border: 2px solid #555575; padding: 15px; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; text-align: center; font-size: 15px; }
+        .select-btn.selected { background: #0056b3; border-color: #0ff; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+        
+        .entry-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        @media (max-width: 800px) { .entry-list { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 450px) { .entry-list { grid-template-columns: repeat(1, 1fr); } }
+        .entry-card { background: #222232; border: 2px solid #555575; padding: 12px; border-radius: 12px; text-align: left; }
+        .entry-card .avatar-placeholder { height: 50px; background: #1a1a26; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px; border: 1px dashed #444; }
+        .entry-card select { background: #333; color: #fff; border: 1px solid #555; width: 100%; margin-top: 6px; padding: 6px; font-size: 13px; border-radius: 6px; }
+        
+        .nav-btn { width: 100%; background: #28a745; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 15px; }
+        .nav-btn.prev { background: #6c757d; }
+        
+        #battleUiContainer { max-width: 1200px; margin: 5px auto; background: #333; padding: 10px; border-radius: 8px; box-sizing: border-box; }
+        #weaponPanel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; background: #222; padding: 6px; border-radius: 6px; }
+        .wpBtn { background: #444; color: #fff; border: 2px solid #666; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1; min-width: 100px; max-width: 150px; }
+        .wpBtn.active { background: #0056b3; border-color: #0ff; box-shadow: 0 0 8px rgba(0,255,255,0.5); }
+        #passBtn { background: #422; color: #ff4; font-weight: bold; border: 2px solid #833; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer; }
+        
+        #controlPanelGrid { display: grid; grid-template-columns: 0.9fr 1.4fr 0.9fr; gap: 10px; align-items: center; background: #252525; padding: 10px; border-radius: 8px; }
+        .move-row { display: flex; gap: 6px; width: 100%; height: 100%; }
+        .angle-column { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        
+        .padBtn { background: #555; color: white; border: 2px solid #777; border-radius: 8px; font-size: 14px; font-weight: bold; padding: 10px 0; cursor: pointer; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px #333; }
+        .padBtn:active { transform: translateY(2px); box-shadow: 0 1px #111; }
+        
+        #centerControls { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
+        #powerGaugeWrapper { position: relative; width: 100%; height: 28px; background-color: #111; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
+        #powerBar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9100, #ff3d00); }
+        #powerMarker { position: absolute; top: 0; width: 4px; height: 100%; background-color: rgba(25, 25, 255, 0.75); box-shadow: 0 0 6px #fff; display: none; pointer-events: none; }
+        #powerText { position: absolute; top: 0; left: 10px; line-height: 28px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
+        
+        #padFire { background: #d9534f; border: 2px solid #d43f3a; height: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
+        #returnMenuBtn { display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); background: #ffaa00; color: #000; border: 4px solid #fff; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 12px; cursor: pointer; z-index: 150; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+    </style>
+</head>
+<body>
+
+    <div id="debugLog">⏳ 資産画像を読み込み中...</div>
+    <button id="returnMenuBtn" onclick="returnToMenu()">🏠 タイトルメニューに戻る</button>
+
+    <div id="menuScreen">
+        <div class="menu-container">
+            <h2 class="title">🐾 動物戦車：おもちゃの大乱闘マルチ 🐾</h2>
+            <div id="stepPanel1" class="step-panel active">
+                <div class="section-title">👥 STEP 1: 参戦プレイヤー数の設定（最大8人）</div>
+                <div class="flex-row">
+                    <div class="num-input-group">
+                        <label>👤 人間プレイヤー</label>
+                        <select id="selectHumans" onchange="validateCounts()"></select>
+                    </div>
+                    <div class="num-input-group">
+                        <label>🤖 CPUロボット</label>
+                        <select id="selectCpus" onchange="validateCounts()"></select>
+                    </div>
+                </div>
+                <button class="nav-btn" onclick="goToStep(2)">次へ進む ➡️</button>
+            </div>
+            <div id="stepPanel2" class="step-panel">
+                <div class="section-title">⚔️ STEP 2: 試合形式ルール ＆ ステージ</div>
+                <div class="flex-row">
+                    <div class="select-btn selected" id="ruleSolo" onclick="selectRule('solo')">💥 個人戦</div>
+                    <div class="select-btn" id="ruleTeam" onclick="selectRule('team')">🤝 チーム戦</div>
+                </div>
+                <div class="section-title">🗺️ ステージ選択（全12ステージ）</div>
+                <div class="flex-row">
+                    <select id="selectStageId" style="width: 100%; background: #3a3a52; color: #fff; border: 2px solid #555575; padding: 12px; font-size: 16px; border-radius: 10px;" onchange="selectMap(this.value)">
+                    </select>
+                </div>
+                <div class="flex-row" style="margin-top:20px;">
+                    <button class="nav-btn prev" onclick="goToStep(1)">⬅️ 戻る</button>
+                    <button class="nav-btn" onclick="goToStep(3)">次へ進む ➡️</button>
+                </div>
+            </div>
+            <div id="stepPanel3" class="step-panel">
+                <div class="section-title">🎨 STEP 3: キャラクター＆チームエントリー</div>
+                <div class="entry-list" id="entryList"></div>
+                <div class="flex-row">
+                    <button class="nav-btn prev" onclick="goToStep(2)">⬅️ 戻る</button>
+                    <button class="nav-btn" style="background:#28a745;" onclick="startGame()">⚔️ 大乱闘スタート ⚔️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="1200" height="600" tabindex="1"></canvas>
+
+    <div id="battleUiContainer">
+        <div id="weaponPanel">
+            <button id="wp0" class="wpBtn active" onclick="clickWpBtn(0)">通常弾</button>
+            <button id="wp1" class="wpBtn" onclick="clickWpBtn(1)">🎯 狙撃弾(1)</button>
+            <button id="wp2" class="wpBtn" onclick="clickWpBtn(2)">🔥 三連弾(1)</button>
+            <button id="wp3" class="wpBtn" onclick="clickWpBtn(3)">⛓️ 鉄球弾(1)</button>
+            <button id="wp4" class="wpBtn" onclick="clickWpBtn(4)">🌀 ワープ弾(1)</button>
+            <button id="wp5" class="wpBtn" onclick="clickWpBtn(5)">🌟 固有弾(1)</button>
+            <button id="passBtn" onclick="clickPassBtn()">🔄 パス</button>
+        </div>
+        
+        <div id="controlPanelGrid">
+            <div class="move-row">
+                <div class="padBtn" id="btnLeft">◀ 移動</div>
+                <div class="padBtn" id="btnRight">移動 ▶</div>
+            </div>
+            <div id="centerControls">
+                <div id="powerGaugeWrapper">
+                    <div id="powerBar"></div>
+                    <div id="powerMarker"></div>
+                    <div id="powerText">パワー: 0%</div>
+                </div>
+                <div class="angle-column">
+                    <div class="padBtn" id="btnUp" style="padding: 5px 0;">▲ 砲高</div>
+                    <div class="padBtn" id="btnDown" style="padding: 5px 0;">▼ 砲低</div>
+                </div>
+            </div>
+            <div id="padFire">🔥 発射<br>(Space)</div>
+        </div>
+    </div>
+
+    <script>
+        const CharacterData = {
+            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 12, color: "#3388ff", numCode: "01" },
+            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 12, color: "#ff66cc", numCode: "02" },
+            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 8, color: "#8b5a2b", numCode: "03" }, 
+            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 12, color: "#ff9933", numCode: "04" },
+            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 16, color: "#aaaaaa", numCode: "05" },
+            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 12, color: "#4e3629", numCode: "06" },
+            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 16, color: "#111111", numCode: "07" },
+            "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#00ccff", numCode: "08" },
+            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 12, color: "#c2b280", numCode: "09" },
+            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 12, color: "#ffffff", numCode: "10" },
+            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 14, color: "#4dff4d", numCode: "11" },
+            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 8, color: "#228b22", numCode: "12" },  
+            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 10, color: "#a0522d", numCode: "13" },
+            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 12, color: "#708090", numCode: "14" }
+        };
+
+        const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {} };
+
+        const MapStages = [
+            { id: "stage1", name: "🌱 Simple meadow", mapImg: "M01.png", bgImg: "B01.png", type: "hill" },
+            { id: "stage2", name: "♨️ Bathhouse mural", mapImg: "M02.png", bgImg: "B02.png", type: "flat" },
+            { id: "stage3", name: "🐜 Ant colony", mapImg: "M03.png", bgImg: "B03.png", type: "canyon" },
+            { id: "stage4", name: "🫖 Tea party", mapImg: "M04.png", bgImg: "B04.png", type: "hill" },
+            { id: "stage5", name: "📚 Book shelf", mapImg: "M05.png", bgImg: "B05.png", type: "flat" },
+            { id: "stage6", name: "📖 Picture diary", mapImg: "M06.png", bgImg: "B06.png", type: "hill" },
+            { id: "stage7", name: "⚓ Port town", mapImg: "M07.png", bgImg: "B07.png", type: "canyon" },
+            { id: "stage8", name: "🗺️ World Map", mapImg: "M08.png", bgImg: "B08.png", type: "flat" },
+            { id: "stage9", name: "🧱 Block Castle", mapImg: "M09.png", bgImg: "B09.png", type: "canyon" },
+            { id: "stage10", name: "🌕 Lunar Surface", mapImg: "M10.png", bgImg: "B10.png", type: "flat" },
+            { id: "stage11", name: "🪐 Planet X", mapImg: "M11.png", bgImg: "B11.png", type: "hill" },
+            { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon" }
+        ];
+
+        // 🌟 画像資産の非同期読み込み完全同期カウンター
+        let totalImages = 0;
+        let loadedImages = 0;
+
+        function onImageLoad() {
+            loadedImages++;
+            if (loadedImages >= totalImages) {
+                document.getElementById("debugLog").innerText = "🎮 GitHub上の全画像読み込み完了！画像通りのマップで遊べます。";
+            } else {
+                document.getElementById("debugLog").innerText = `⏳ 画像資産を通信中... (${loadedImages}/${totalImages})`;
+            }
+        }
+
+        Object.keys(CharacterData).forEach(key => {
+            const code = CharacterData[key].numCode;
+            totalImages += 2;
+            ImageAssets.tanks[key] = new Image(); 
+            ImageAssets.tanks[key].onload = onImageLoad;
+            ImageAssets.tanks[key].src = `assets/images/${code}.png`;
+            
+            ImageAssets.turrets[key] = new Image(); 
+            ImageAssets.turrets[key].onload = onImageLoad;
+            ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
+        });
+
+        MapStages.forEach(st => {
+            totalImages += 2;
+            ImageAssets.stages[st.id] = new Image();
+            ImageAssets.stages[st.id].onload = onImageLoad;
+            ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
+            
+            ImageAssets.backgrounds[st.id] = new Image();
+            ImageAssets.backgrounds[st.id].onload = onImageLoad;
+            ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
+        });
+
+        const stageSelect = document.getElementById("selectStageId");
+        MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
+
+        let selectedStageObj = MapStages[0];
+        let selectedRuleMode = 'solo';
+        let animationFrameId = null;
+        let selWpType = 0; 
+        
+        const hSel = document.getElementById("selectHumans");
+        const cSel = document.getElementById("selectCpus");
+        for(let i=1; i<=8; i++) hSel.innerHTML += `<option value="${i}" ${i===1?'selected':''}>${i}人</option>`;
+        for(let i=0; i<=7; i++) cSel.innerHTML += `<option value="${i}" ${i===3?'selected':''}>${i}体</option>`;
+
+        function validateCounts() {
+            let h = parseInt(hSel.value); let c = parseInt(cSel.value);
+            if (h + c > 8) { alert("合計人数は最大8人までです。"); cSel.value = 8 - h; }
+        }
+        validateCounts();
+
+        function selectMap(stageId) {
+            selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0];
+        }
+
+        function selectRule(r) {
+            selectedRuleMode = r;
+            document.getElementById('ruleSolo').classList.toggle('selected', r === 'solo');
+            document.getElementById('ruleTeam').classList.toggle('selected', r === 'team');
+        }
+
+        let finalPlayersSetup = [];
+        const Teams = ["Red", "Blue", "Yellow", "Green"];
+
+        function goToStep(step) {
+            if (step === 3) {
+                let hCount = parseInt(hSel.value); let cCount = parseInt(cSel.value);
+                if (hCount + cCount < 2) { alert("合計2人以上必要です！"); return; }
+                finalPlayersSetup = [];
+                let idCounter = 1;
+                let charKeys = Object.keys(CharacterData);
+                for(let i=0; i<hCount; i++) {
+                    finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    idCounter++;
+                }
+                for(let i=0; i<cCount; i++) {
+                    finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    idCounter++;
+                }
+                buildStep3UI();
+            }
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`stepPanel${step}`).classList.add('active');
+        }
+
+        function buildStep3UI() {
+            const container = document.getElementById("entryList"); container.innerHTML = "";
+            finalPlayersSetup.forEach((p, idx) => {
+                const card = document.createElement("div"); card.className = "entry-card";
+                let charOpts = ""; Object.keys(CharacterData).forEach(k => { charOpts += `<option value="${k}" ${p.charKey === k ? 'selected' : ''}>${CharacterData[k].name}</option>`; });
+                let teamOpts = ""; Teams.forEach(t => { teamOpts += `<option value="${t}" ${p.team === t ? 'selected' : ''}>${t} チーム</option>`; });
+                let teamSelectorHTML = selectedRuleMode === 'team' ? `<select onchange="finalPlayersSetup[${idx}].team = this.value">${teamOpts}</select>` : `<div style="font-size:11px; color:#888; margin-top:8px;">⚔️ 個人戦</div>`;
+
+                card.innerHTML = `
+                    <div style="font-size:11px;font-weight:bold;color:#0ff;">${p.type === 'HUMAN' ? `👤 ${p.id}P` : `🤖 ${p.id}P`}</div>
+                    <div class="avatar-placeholder" id="avatar-${idx}">✨</div>
+                    <select onchange="updateCardColor(${idx}, this.value)">${charOpts}</select>
+                    ${teamSelectorHTML}
+                `;
+                container.appendChild(card); updateCardColor(idx, p.charKey);
+            });
+        }
+
+        function updateCardColor(idx, key) {
+            finalPlayersSetup[idx].charKey = key;
+            const ph = document.getElementById(`avatar-${idx}`);
+            if(ph) { ph.style.color = CharacterData[key].color; ph.innerText = `🚗 ${CharacterData[key].name}`; }
+        }
+
+        function returnToMenu() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            document.getElementById("returnMenuBtn").style.display = "none";
+            document.getElementById("menuScreen").style.display = "flex";
+        }
+
+        function clickWpBtn(type) { if (window.G) window.G.selWp(type); }
+        function clickPassBtn() { if (window.G) window.G.clickPassBtn(); }
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        let terrainMap = []; 
+        let bullets = []; let particles = []; let introPlanes = [];
+
+        const mapCanvas = document.createElement("canvas");
+        const mapCtx = mapCanvas.getContext("2d");
+        mapCanvas.width = 1200;
+        mapCanvas.height = 600;
+
+        const keyInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
+        const padInputs = { left: false, right: false, up: false, down: false, firePressed: false, fireReleased: false };
+
+        window.addEventListener("keydown", (e) => {
+            if (window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+            if (e.code === "ArrowLeft")  { keyInputs.left = true;  e.preventDefault(); }
+            if (e.code === "ArrowRight") { keyInputs.right = true; e.preventDefault(); }
+            if (e.code === "ArrowUp")    { keyInputs.up = true;    e.preventDefault(); }
+            if (e.code === "ArrowDown")  { keyInputs.down = true;  e.preventDefault(); }
+            if (e.code === "Space" && !keyInputs.firePressed && !keyInputs.fireReleased) { keyInputs.firePressed = true; e.preventDefault(); }
+        });
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "ArrowLeft")  keyInputs.left = false;
+            if (e.code === "ArrowRight") keyInputs.right = false;
+            if (e.code === "ArrowUp")    keyInputs.up = false;
+            if (e.code === "ArrowDown")  keyInputs.down = false;
+            if (e.code === "Space") { if (keyInputs.firePressed) { keyInputs.firePressed = false; keyInputs.fireReleased = true; } e.preventDefault(); }
+        });
+
+        function initInputBinds() {
+            const bindBtn = (id, key) => {
+                const btn = document.getElementById(id);
+                if(!btn) return;
+                const press = (e) => { 
+                    e.preventDefault(); canvas.focus(); 
+                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+                    padInputs[key] = true; 
+                };
+                const release = (e) => { e.preventDefault(); padInputs[key] = false; };
+                btn.addEventListener("touchstart", press); btn.addEventListener("touchend", release);
+                btn.addEventListener("mousedown", press);  btn.addEventListener("mouseup", release);
+                btn.addEventListener("mouseleave", release);
+            };
+            bindBtn("btnLeft", "left"); bindBtn("btnRight", "right"); bindBtn("btnUp", "up"); bindBtn("btnDown", "down");
+
+            const fBtn = document.getElementById("padFire");
+            if(fBtn) {
+                const fPress = (e) => { 
+                    e.preventDefault(); canvas.focus(); 
+                    if(window.G && (window.G.isIntro || window.G.isShooting || bullets.length > 0)) return; 
+                    if (!padInputs.firePressed && !padInputs.fireReleased) padInputs.firePressed = true; 
+                };
+                const fRelease = (e) => { e.preventDefault(); if (padInputs.firePressed) { padInputs.firePressed = false; padInputs.fireReleased = true; } };
+                fBtn.addEventListener("touchstart", fPress); fBtn.addEventListener("touchend", fRelease);
+                fBtn.addEventListener("mousedown", fPress);  fBtn.addEventListener("mouseup", fRelease);
+            }
+        }
+
+        // 🌟 画像から100%正確な当たり判定（アルファ値）を作るスキャン処理
+        function buildTerrainFromLoadedImage(img, stageType) {
+            terrainMap = Array.from({ length: canvas.width }, () => new Int8Array(canvas.height).fill(0));
+            
+            try {
+                let tempCanvas = document.createElement("canvas");
+                tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+                let tempCtx = tempCanvas.getContext("2d");
+                tempCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                let imgData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+                for (let x = 0; x < canvas.width; x++) {
+                    for (let y = 0; y < canvas.height; y++) {
+                        let aIdx = (y * canvas.width + x) * 4 + 3;
+                        if (imgData[aIdx] > 10) { terrainMap[x][y] = 1; } 
+                    }
+                }
+            } catch (e) {
+                // 万が一のためのエラーフォールバック
+                for (let x = 0; x < canvas.width; x++) {
+                    let surfaceY = canvas.height - 120;
+                    if (stageType === "hill") surfaceY = Math.floor(canvas.height - 180 + Math.sin(x * 0.005) * 80 + Math.sin(x * 0.02) * 20);
+                    else if (stageType === "canyon") surfaceY = Math.floor(canvas.height - 150 + Math.sin(x * 0.008) * 120 + Math.cos(x * 0.03) * 30);
+                    for (let y = surfaceY; y < canvas.height; y++) { terrainMap[x][y] = 1; }
+                }
+            }
+        }
+
+        function isGround(x, y) {
+            let tx = Math.floor(x); let ty = Math.floor(y);
+            if (tx < 0 || tx >= canvas.width || ty < 0 || ty >= canvas.height) return false;
+            return terrainMap[tx][ty] === 1;
+        }
+
+        function damageTerrain(cx, cy, radius) {
+            if (radius <= 0) return;
+            cx = Math.floor(cx); cy = Math.floor(cy);
+            
+            for (let x = cx - radius; x <= cx + radius; x++) {
+                if (x < 0 || x >= canvas.width) continue;
+                for (let y = cy - radius; y <= cy + radius; y++) {
+                    if (y < 0 || y >= canvas.height) continue;
+                    let dx = x - cx; let dy = y - cy;
+                    if (dx * dx + dy * dy <= radius * radius) { terrainMap[x][y] = 0; }
+                }
+            }
+
+            mapCtx.save();
+            mapCtx.globalCompositeOperation = 'destination-out';
+            mapCtx.beginPath(); mapCtx.arc(cx, cy, radius, 0, Math.PI * 2); mapCtx.fill();
+            mapCtx.restore();
+
+            for (let i = 0; i < radius * 0.3; i++) {
+                particles.push(new Particle(cx + (Math.random() * radius * 2 - radius), cy + (Math.random() * radius - radius / 2), Math.random() * 4 - 2, Math.random() * -4 - 1, "#ff6600", Math.random() * 3 + 1));
+            }
+        }
+
+        class IntroPlane {
+            constructor(targetX, tank) { this.x = -150; this.y = 60; this.speed = 12; this.targetX = targetX; this.tank = tank; this.hasDropped = false; }
+            update() {
+                this.x += this.speed;
+                if (!this.hasDropped && this.x >= this.targetX) { 
+                    this.hasDropped = true; this.tank.x = this.x; this.tank.y = this.y; this.tank.isDropping = true; this.tank.hasSpawned = true;
+                }
+            }
+            draw() { ctx.fillStyle = "#666"; ctx.fillRect(this.x - 20, this.y - 5, 40, 10); }
+        }
+
+        class Particle {
+            constructor(x, y, vx, vy, color, size) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.size = size; this.life = 1.0; this.decay = Math.random() * 0.04 + 0.02; }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.1; this.life -= this.decay; }
+            draw() { if (this.life <= 0) return; ctx.save(); ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        }
+
+        class Bullet {
+            constructor(x, y, vx, vy, color, type, owner) {
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.type = type; this.owner = owner;
+                this.radius = 5; this.isDead = false; this.lifeFrame = 0;
+            }
+            update() {
+                this.lifeFrame++; this.vy += 0.23; this.x += this.vx; this.y += this.vy;
+                if (this.x < -50 || this.x >= canvas.width + 50 || this.y > canvas.height + 50) { this.isDead = true; return; }
+
+                let skipCollision = (this.lifeFrame <= 5 && Math.hypot(this.x - this.owner.x, this.y - this.owner.y) < 35);
+                let hitTerrain = !skipCollision && isGround(this.x, this.y);
+
+                let hitTank = null;
+                window.G.tanks.forEach(t => {
+                    if (t.hp > 0 && t.hasSpawned) {
+                        if (skipCollision && t.id === this.owner.id) return;
+                        if (Math.hypot(t.x - this.x, this.y - t.y) < (this.radius + 20)) hitTank = t;
+                    }
+                });
+
+                if (hitTank || hitTerrain) this.explode(this.x, this.y); 
+            }
+            explode(cx, cy) {
+                this.isDead = true;
+                if (this.type === 1) { damageTerrain(cx, cy, 19); }
+                else if (this.type === 2) { damageTerrain(cx, cy, 25); }
+                else if (this.type === 3) { damageTerrain(cx, cy, 56); }
+                else if (this.type === 4) { this.owner.x = cx; this.owner.y = cy; this.owner.checkGroundStatus(); }
+                else { damageTerrain(cx, cy, 32); }
+            }
+        }
+
+        class Tank {
+            constructor(x, key, name, id, isCpu, team, num) {
+                let s = CharacterData[key]; this.x = x; this.id = id; this.charKey = key; this.color = s.color; this.name = name;
+                this.isCpu = isCpu; this.team = team; this.num = num; this.y = -100; 
+                this.isDropping = false; this.vy = 0; this.hasSpawned = false; 
+                this.maxHp = s.hp; this.hp = s.hp; this.maxGas = s.gas; this.gas = s.gas; this.climbLimit = s.climb;
+                this.facingDir = num <= 4 ? 1 : -1; this.angle = this.facingDir === 1 ? -Math.PI / 4 : -3 * Math.PI / 4;
+                this.chargePower = 2; this.chargeDirection = 1; this.isCharging = false;
+            }
+            
+            checkGroundStatus() {
+                if (!this.hasSpawned) return;
+                if (!isGround(this.x, this.y + 16)) this.isDropping = true;
+            }
+
+            updatePosition(checkCliff = false, prevX = 0) {
+                if (!this.hasSpawned) return;
+                if (!isGround(this.x, this.y + 16)) { this.isDropping = true; } 
+                else {
+                    while(isGround(this.x, this.y + 15)) { this.y--; }
+                    this.vy = 0; this.isDropping = false;
+                }
+                if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) { if (this.hp > 0) this.hp = 0; }
+            }
+
+            constrainAngle() {
+                if (this.facingDir === 1) { this.angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.angle)); } 
+                else {
+                    if (this.angle < -Math.PI * 1.5) this.angle += Math.PI * 2;
+                    if (this.angle > Math.PI * 0.5) this.angle -= Math.PI * 2;
+                    if (this.angle > -Math.PI / 2 && this.angle <= Math.PI * 0.5) this.angle = this.angle > 0 ? Math.PI * 0.5 : -Math.PI / 2;
+                    else this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
+                }
+            }
+
+            update(myTurn) {
+                if (!this.hasSpawned) return;
+                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(false); return; }
+                this.updatePosition(false); if (this.hp <= 0) return;
+
+                if (!myTurn) return;
+                this.constrainAngle();
+
+                if (this.isCharging && !this.isCpu) {
+                    this.chargePower += 0.15 * this.chargeDirection;
+                    if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
+                    if (this.chargePower <= 2) { this.chargePower = 2; this.chargeDirection = 1; }
+                    
+                    let pct = ((this.chargePower - 2) / 10) * 100;
+                    document.getElementById("powerBar").style.width = `${pct}%`;
+                    document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
+                }
+
+                if (this.isCpu) {
+                    if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
+                        let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
+                        if (target) { this.angle = Math.atan2(target.y - this.y, target.x - this.x); }
+                        this.isCharging = true; this.chargePower = 5 + Math.random()*5;
+                    } else if (this.isCharging) { this.isCharging = false; window.G.isShooting = true; this.fire(this.chargePower); }
+                    return;
+                }
+
+                let moveLeft = keyInputs.left || padInputs.left; let moveRight = keyInputs.right || padInputs.right;
+                let angleUp = keyInputs.up || padInputs.up; let angleDown = keyInputs.down || padInputs.down;
+                let firePressed = keyInputs.firePressed || padInputs.firePressed;
+                let fireReleased = keyInputs.fireReleased || padInputs.fireReleased;
+
+                let reverseCost = 20 - this.climbLimit; 
+
+                if (moveLeft && this.facingDir === 1) { 
+                    if (this.gas >= reverseCost) { this.gas -= reverseCost; this.facingDir = -1; this.angle = -Math.PI - this.angle; } else { moveLeft = false; }
+                }
+                if (moveRight && this.facingDir === -1) { 
+                    if (this.gas >= reverseCost) { this.gas -= reverseCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { moveRight = false; }
+                }
+
+                if (firePressed && !window.G.isShooting && bullets.length === 0 && !this.isCharging) {
+                    this.isCharging = true; this.chargePower = 2; this.chargeDirection = 1;
+                }
+                
+                if (fireReleased && this.isCharging) {
+                    keyInputs.fireReleased = false; padInputs.fireReleased = false; this.isCharging = false;
+                    window.G.isShooting = true; this.fire(this.chargePower);
+                    this.chargePower = 2; this.chargeDirection = 1;
+                    document.getElementById("powerBar").style.width = "0%"; document.getElementById("powerText").textContent = "パワー: 0%"; return;
+                }
+
+                if (!this.isCharging) {
+                    if (this.gas >= 0.4 && (moveLeft || moveRight)) {
+                        let dir = moveLeft ? -1 : 1; this.gas -= 0.4;
+                        let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
+                    }
+                    if (this.gas >= 0.2 && (angleUp || angleDown)) {
+                        this.gas -= 0.2;
+                        if (this.facingDir === 1) { if (angleUp) this.angle -= 0.03; if (angleDown) this.angle += 0.03; } 
+                        else { if (angleUp) this.angle += 0.03; if (angleDown) this.angle -= 0.03; }
+                        this.constrainAngle();
+                    }
+                }
+            }
+
+            fire(power) {
+                let wp = selWpType || 0;
+                const bx = this.x + Math.cos(this.angle) * 28; const by = (this.y + 16) + Math.sin(this.angle) * 28; 
+                let vel = power * 1.35; 
+                bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, wp, this));
+            }
+
+            draw() {
+                if (this.hp <= 0 || !this.hasSpawned) return;
+                ctx.save(); ctx.translate(this.x, this.y);
+                
+                let imgTank = ImageAssets.tanks[this.charKey];
+                let imgTurret = ImageAssets.turrets[this.charKey];
+                let hasImg = imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0;
+
+                if (hasImg) {
+                    ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
+                    ctx.save(); ctx.translate(0, 5); 
+                    let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
+                    ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -6, -10, 30, 16); ctx.restore();
+                    ctx.drawImage(imgTank, -22, -18, 44, 35); ctx.restore();
+                } else {
+                    ctx.strokeStyle = "#444"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, 8); 
+                    ctx.lineTo(Math.cos(this.angle) * 28, 8 + Math.sin(this.angle) * 28); ctx.stroke();
+                    ctx.fillStyle = this.color; ctx.fillRect(-22, -12, 44, 15); ctx.fillStyle = "#333"; ctx.fillRect(-26, 3, 52, 15);
+                }
+                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42);
+                ctx.restore();
+            }
+        }
+
+        class Game {
+            constructor(configs) {
+                let imgMap = ImageAssets.stages[selectedStageObj.id];
+                
+                // 1. 画像から本物の足場配列を100%構築
+                buildTerrainFromLoadedImage(imgMap, selectedStageObj.type);
+
+                // 2. 表示用キャンバスへの描画
+                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+                mapCtx.drawImage(imgMap, 0, 0, mapCanvas.width, mapCanvas.height);
+
+                this.isIntro = true; this.tanks = []; introPlanes = [];
+                configs.forEach((cfg) => {
+                    let randX = 150 + Math.random() * (canvas.width - 300);
+                    let pName = cfg.type === 'HUMAN' ? `${cfg.id}P:${CharacterData[cfg.charKey].name}` : `🤖:${CharacterData[cfg.charKey].name}`;
+                    let t = new Tank(0, cfg.charKey, pName, `P${cfg.id}`, cfg.type === 'CPU', cfg.team, cfg.id);
+                    this.tanks.push(t); introPlanes.push(new IntroPlane(randX, t));
+                });
+                this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30;
+                this.lastTime = performance.now(); this.isGameOver = false;
+                initInputBinds();
+            }
+
+            startTurn() {
+                if (this.isIntro || this.isGameOver) return;
+                this.turnTimer = 30; this.isShooting = false;
+                this.windPower = Math.floor(Math.random() * 11) - 5;
+                this.upWpBtn();
+                document.getElementById("debugLog").innerText = `🎮 ターン交代: ${this.tanks[this.turnIdx].name}`;
+            }
+
+            nextTurn() {
+                bullets = []; this.isShooting = false;
+                let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
+                do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
+                this.startTurn();
+            }
+
+            clickPassBtn() { if (!this.isShooting && bullets.length === 0) this.nextTurn(); }
+            selWp(type) { selWpType = type; this.upWpBtn(); canvas.focus(); }
+            upWpBtn() {
+                for (let i = 0; i <= 5; i++) {
+                    const btn = document.getElementById(`wp${i}`); if (btn) btn.classList.toggle("active", selWpType === i);
+                }
+            }
+
+            checkGameOver() {
+                let alive = this.tanks.filter(t => t.hp > 0); this.isGameOver = true;
+                document.getElementById("debugLog").innerText = alive.length > 0 ? `🏆 【${alive[0].name}】 の勝利！` : `💀 引き分け`;
+                document.getElementById("returnMenuBtn").style.display = "block";
+            }
+
+            update() {
+                let now = performance.now(); let dt = (now - this.lastTime) / 1000; this.lastTime = now;
+                if (this.isIntro) {
+                    let finished = true; introPlanes.forEach(p => { p.update(); if(!p.hasDropped) finished = false; });
+                    this.tanks.forEach(t => { if(t.hasSpawned) t.update(false); if(t.isDropping || !t.hasSpawned) finished = false; });
+                    if (finished) { this.isIntro = false; this.startTurn(); } return;
+                }
+                if (!this.isShooting && bullets.length === 0) { this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } }
+                
+                this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
+                for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(); if (bullets[i].isDead) bullets.splice(i, 1); }
+                for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
+                
+                if (this.isShooting && bullets.length === 0) { this.isShooting = false; this.nextTurn(); }
+            }
+
+            draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                let imgBg = ImageAssets.backgrounds[selectedStageObj.id];
+                if (imgBg && imgBg.complete && imgBg.width > 0) ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height);
+                else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+
+                ctx.drawImage(mapCanvas, 0, 0);
+
+                this.tanks.forEach(t => t.draw());
+                bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+                particles.forEach(p => p.draw());
+                
+                this.tanks.forEach((t, idx) => {
+                    let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
+                    ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
+                    ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(t.name, bx + 71, 24);
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8);
+                    if (t.hp > 0) { ctx.fillStyle = "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6);
+                    if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
+                    ctx.restore();
+                });
+            }
+        }
+
+        // 🌟 画像がすべて読み込まれているかチェックして開始する安全弁
+        function startGame() { 
+            if (loadedImages < totalImages) {
+                alert(`現在、画像を読み込み中です。少々お待ちください (${loadedImages}/${totalImages})`);
+                return;
+            }
+            document.getElementById("menuScreen").style.display = "none"; 
+            window.G = new Game(finalPlayersSetup); 
+            runGame(); 
+        }
+
+        function runGame() { window.G.update(); window.G.draw(); animationFrameId = requestAnimationFrame(runGame); }
+    </script>
+</body>
+</html>
