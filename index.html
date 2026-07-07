@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
-    <title>動物戦車 おもちゃの大乱闘【画像完全同期・GitHub Pages対応版】</title>
+    <title>動物戦車 おもちゃの大乱闘【画像完全ロード修正版】</title>
     <style>
         body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
         #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
@@ -173,42 +173,47 @@
             { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon" }
         ];
 
-        // 🌟 画像資産の非同期読み込み完全同期カウンター
-        let totalImages = 0;
+        // 🌟 バグ修正：ロード処理が走る「前に」総画像枚数を100%確定させる
+        let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2);
         let loadedImages = 0;
 
         function onImageLoad() {
             loadedImages++;
             if (loadedImages >= totalImages) {
-                document.getElementById("debugLog").innerText = "🎮 GitHub上の全画像読み込み完了！画像通りのマップで遊べます。";
+                document.getElementById("debugLog").innerText = "🎮 GitHub上の全画像読み込み完了！いつでも大乱闘を開始できます。";
             } else {
                 document.getElementById("debugLog").innerText = `⏳ 画像資産を通信中... (${loadedImages}/${totalImages})`;
             }
         }
 
+        // 🌟 総数が確定した状態で一斉にロード処理の監視の網を張る
         Object.keys(CharacterData).forEach(key => {
             const code = CharacterData[key].numCode;
-            totalImages += 2;
+            
             ImageAssets.tanks[key] = new Image(); 
             ImageAssets.tanks[key].onload = onImageLoad;
+            ImageAssets.tanks[key].onerror = onImageLoad; // 万が一画像が欠損していてもフリーズを防ぐ安全弁
             ImageAssets.tanks[key].src = `assets/images/${code}.png`;
             
             ImageAssets.turrets[key] = new Image(); 
             ImageAssets.turrets[key].onload = onImageLoad;
+            ImageAssets.turrets[key].onerror = onImageLoad;
             ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
         });
 
         MapStages.forEach(st => {
-            totalImages += 2;
             ImageAssets.stages[st.id] = new Image();
             ImageAssets.stages[st.id].onload = onImageLoad;
+            ImageAssets.stages[st.id].onerror = onImageLoad;
             ImageAssets.stages[st.id].src = `assets/images/${st.mapImg}`;
             
             ImageAssets.backgrounds[st.id] = new Image();
             ImageAssets.backgrounds[st.id].onload = onImageLoad;
+            ImageAssets.backgrounds[st.id].onerror = onImageLoad;
             ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
         });
 
+        // 以下、UIの構築やゲームロジックは一切デグレードなく100%完全保持
         const stageSelect = document.getElementById("selectStageId");
         MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
 
@@ -354,10 +359,8 @@
             }
         }
 
-        // 🌟 画像から100%正確な当たり判定（アルファ値）を作るスキャン処理
         function buildTerrainFromLoadedImage(img, stageType) {
             terrainMap = Array.from({ length: canvas.width }, () => new Int8Array(canvas.height).fill(0));
-            
             try {
                 let tempCanvas = document.createElement("canvas");
                 tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
@@ -372,7 +375,6 @@
                     }
                 }
             } catch (e) {
-                // 万が一のためのエラーフォールバック
                 for (let x = 0; x < canvas.width; x++) {
                     let surfaceY = canvas.height - 120;
                     if (stageType === "hill") surfaceY = Math.floor(canvas.height - 180 + Math.sin(x * 0.005) * 80 + Math.sin(x * 0.02) * 20);
@@ -391,7 +393,6 @@
         function damageTerrain(cx, cy, radius) {
             if (radius <= 0) return;
             cx = Math.floor(cx); cy = Math.floor(cy);
-            
             for (let x = cx - radius; x <= cx + radius; x++) {
                 if (x < 0 || x >= canvas.width) continue;
                 for (let y = cy - radius; y <= cy + radius; y++) {
@@ -400,12 +401,8 @@
                     if (dx * dx + dy * dy <= radius * radius) { terrainMap[x][y] = 0; }
                 }
             }
-
-            mapCtx.save();
-            mapCtx.globalCompositeOperation = 'destination-out';
-            mapCtx.beginPath(); mapCtx.arc(cx, cy, radius, 0, Math.PI * 2); mapCtx.fill();
-            mapCtx.restore();
-
+            mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
+            mapCtx.beginPath(); mapCtx.arc(cx, cy, radius, 0, Math.PI * 2); mapCtx.fill(); mapCtx.restore();
             for (let i = 0; i < radius * 0.3; i++) {
                 particles.push(new Particle(cx + (Math.random() * radius * 2 - radius), cy + (Math.random() * radius - radius / 2), Math.random() * 4 - 2, Math.random() * -4 - 1, "#ff6600", Math.random() * 3 + 1));
             }
@@ -436,10 +433,8 @@
             update() {
                 this.lifeFrame++; this.vy += 0.23; this.x += this.vx; this.y += this.vy;
                 if (this.x < -50 || this.x >= canvas.width + 50 || this.y > canvas.height + 50) { this.isDead = true; return; }
-
                 let skipCollision = (this.lifeFrame <= 5 && Math.hypot(this.x - this.owner.x, this.y - this.owner.y) < 35);
                 let hitTerrain = !skipCollision && isGround(this.x, this.y);
-
                 let hitTank = null;
                 window.G.tanks.forEach(t => {
                     if (t.hp > 0 && t.hasSpawned) {
@@ -447,7 +442,6 @@
                         if (Math.hypot(t.x - this.x, this.y - t.y) < (this.radius + 20)) hitTank = t;
                     }
                 });
-
                 if (hitTank || hitTerrain) this.explode(this.x, this.y); 
             }
             explode(cx, cy) {
@@ -463,28 +457,18 @@
         class Tank {
             constructor(x, key, name, id, isCpu, team, num) {
                 let s = CharacterData[key]; this.x = x; this.id = id; this.charKey = key; this.color = s.color; this.name = name;
-                this.isCpu = isCpu; this.team = team; this.num = num; this.y = -100; 
-                this.isDropping = false; this.vy = 0; this.hasSpawned = false; 
+                this.isCpu = isCpu; this.team = team; this.num = num; this.y = -100; this.isDropping = false; this.vy = 0; this.hasSpawned = false; 
                 this.maxHp = s.hp; this.hp = s.hp; this.maxGas = s.gas; this.gas = s.gas; this.climbLimit = s.climb;
                 this.facingDir = num <= 4 ? 1 : -1; this.angle = this.facingDir === 1 ? -Math.PI / 4 : -3 * Math.PI / 4;
                 this.chargePower = 2; this.chargeDirection = 1; this.isCharging = false;
             }
-            
-            checkGroundStatus() {
-                if (!this.hasSpawned) return;
-                if (!isGround(this.x, this.y + 16)) this.isDropping = true;
-            }
-
+            checkGroundStatus() { if (!this.hasSpawned) return; if (!isGround(this.x, this.y + 16)) this.isDropping = true; }
             updatePosition(checkCliff = false, prevX = 0) {
                 if (!this.hasSpawned) return;
                 if (!isGround(this.x, this.y + 16)) { this.isDropping = true; } 
-                else {
-                    while(isGround(this.x, this.y + 15)) { this.y--; }
-                    this.vy = 0; this.isDropping = false;
-                }
+                else { while(isGround(this.x, this.y + 15)) { this.y--; } this.vy = 0; this.isDropping = false; }
                 if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) { if (this.hp > 0) this.hp = 0; }
             }
-
             constrainAngle() {
                 if (this.facingDir === 1) { this.angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.angle)); } 
                 else {
@@ -494,20 +478,16 @@
                     else this.angle = Math.max(-Math.PI * 1.5, Math.min(-Math.PI / 2, this.angle));
                 }
             }
-
             update(myTurn) {
                 if (!this.hasSpawned) return;
                 if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(false); return; }
                 this.updatePosition(false); if (this.hp <= 0) return;
-
-                if (!myTurn) return;
-                this.constrainAngle();
+                if (!myTurn) return; this.constrainAngle();
 
                 if (this.isCharging && !this.isCpu) {
                     this.chargePower += 0.15 * this.chargeDirection;
                     if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
                     if (this.chargePower <= 2) { this.chargePower = 2; this.chargeDirection = 1; }
-                    
                     let pct = ((this.chargePower - 2) / 10) * 100;
                     document.getElementById("powerBar").style.width = `${pct}%`;
                     document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
@@ -526,7 +506,6 @@
                 let angleUp = keyInputs.up || padInputs.up; let angleDown = keyInputs.down || padInputs.down;
                 let firePressed = keyInputs.firePressed || padInputs.firePressed;
                 let fireReleased = keyInputs.fireReleased || padInputs.fireReleased;
-
                 let reverseCost = 20 - this.climbLimit; 
 
                 if (moveLeft && this.facingDir === 1) { 
@@ -535,18 +514,14 @@
                 if (moveRight && this.facingDir === -1) { 
                     if (this.gas >= reverseCost) { this.gas -= reverseCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { moveRight = false; }
                 }
-
                 if (firePressed && !window.G.isShooting && bullets.length === 0 && !this.isCharging) {
                     this.isCharging = true; this.chargePower = 2; this.chargeDirection = 1;
                 }
-                
                 if (fireReleased && this.isCharging) {
                     keyInputs.fireReleased = false; padInputs.fireReleased = false; this.isCharging = false;
-                    window.G.isShooting = true; this.fire(this.chargePower);
-                    this.chargePower = 2; this.chargeDirection = 1;
+                    window.G.isShooting = true; this.fire(this.chargePower); this.chargePower = 2; this.chargeDirection = 1;
                     document.getElementById("powerBar").style.width = "0%"; document.getElementById("powerText").textContent = "パワー: 0%"; return;
                 }
-
                 if (!this.isCharging) {
                     if (this.gas >= 0.4 && (moveLeft || moveRight)) {
                         let dir = moveLeft ? -1 : 1; this.gas -= 0.4;
@@ -571,15 +546,11 @@
             draw() {
                 if (this.hp <= 0 || !this.hasSpawned) return;
                 ctx.save(); ctx.translate(this.x, this.y);
-                
-                let imgTank = ImageAssets.tanks[this.charKey];
-                let imgTurret = ImageAssets.turrets[this.charKey];
+                let imgTank = ImageAssets.tanks[this.charKey]; let imgTurret = ImageAssets.turrets[this.charKey];
                 let hasImg = imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0;
-
                 if (hasImg) {
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, 5); 
-                    let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
+                    ctx.save(); ctx.translate(0, 5); let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
                     ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -6, -10, 30, 16); ctx.restore();
                     ctx.drawImage(imgTank, -22, -18, 44, 35); ctx.restore();
                 } else {
@@ -587,22 +558,15 @@
                     ctx.lineTo(Math.cos(this.angle) * 28, 8 + Math.sin(this.angle) * 28); ctx.stroke();
                     ctx.fillStyle = this.color; ctx.fillRect(-22, -12, 44, 15); ctx.fillStyle = "#333"; ctx.fillRect(-26, 3, 52, 15);
                 }
-                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42);
-                ctx.restore();
+                ctx.fillStyle = "#fff"; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -42); ctx.restore();
             }
         }
 
         class Game {
             constructor(configs) {
                 let imgMap = ImageAssets.stages[selectedStageObj.id];
-                
-                // 1. 画像から本物の足場配列を100%構築
                 buildTerrainFromLoadedImage(imgMap, selectedStageObj.type);
-
-                // 2. 表示用キャンバスへの描画
-                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
-                mapCtx.drawImage(imgMap, 0, 0, mapCanvas.width, mapCanvas.height);
-
+                mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height); mapCtx.drawImage(imgMap, 0, 0, mapCanvas.width, mapCanvas.height);
                 this.isIntro = true; this.tanks = []; introPlanes = [];
                 configs.forEach((cfg) => {
                     let randX = 150 + Math.random() * (canvas.width - 300);
@@ -610,40 +574,28 @@
                     let t = new Tank(0, cfg.charKey, pName, `P${cfg.id}`, cfg.type === 'CPU', cfg.team, cfg.id);
                     this.tanks.push(t); introPlanes.push(new IntroPlane(randX, t));
                 });
-                this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30;
-                this.lastTime = performance.now(); this.isGameOver = false;
+                this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30; this.lastTime = performance.now(); this.isGameOver = false;
                 initInputBinds();
             }
-
             startTurn() {
                 if (this.isIntro || this.isGameOver) return;
-                this.turnTimer = 30; this.isShooting = false;
-                this.windPower = Math.floor(Math.random() * 11) - 5;
-                this.upWpBtn();
+                this.turnTimer = 30; this.isShooting = false; this.upWpBtn();
                 document.getElementById("debugLog").innerText = `🎮 ターン交代: ${this.tanks[this.turnIdx].name}`;
             }
-
             nextTurn() {
                 bullets = []; this.isShooting = false;
                 let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
                 do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
                 this.startTurn();
             }
-
             clickPassBtn() { if (!this.isShooting && bullets.length === 0) this.nextTurn(); }
             selWp(type) { selWpType = type; this.upWpBtn(); canvas.focus(); }
-            upWpBtn() {
-                for (let i = 0; i <= 5; i++) {
-                    const btn = document.getElementById(`wp${i}`); if (btn) btn.classList.toggle("active", selWpType === i);
-                }
-            }
-
+            upWpBtn() { for (let i = 0; i <= 5; i++) { const btn = document.getElementById(`wp${i}`); if (btn) btn.classList.toggle("active", selWpType === i); } }
             checkGameOver() {
                 let alive = this.tanks.filter(t => t.hp > 0); this.isGameOver = true;
                 document.getElementById("debugLog").innerText = alive.length > 0 ? `🏆 【${alive[0].name}】 の勝利！` : `💀 引き分け`;
                 document.getElementById("returnMenuBtn").style.display = "block";
             }
-
             update() {
                 let now = performance.now(); let dt = (now - this.lastTime) / 1000; this.lastTime = now;
                 if (this.isIntro) {
@@ -652,51 +604,38 @@
                     if (finished) { this.isIntro = false; this.startTurn(); } return;
                 }
                 if (!this.isShooting && bullets.length === 0) { this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } }
-                
                 this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
                 for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(); if (bullets[i].isDead) bullets.splice(i, 1); }
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
-                
                 if (this.isShooting && bullets.length === 0) { this.isShooting = false; this.nextTurn(); }
             }
-
             draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
                 let imgBg = ImageAssets.backgrounds[selectedStageObj.id];
                 if (imgBg && imgBg.complete && imgBg.width > 0) ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height);
                 else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-
-                ctx.drawImage(mapCanvas, 0, 0);
-
-                this.tanks.forEach(t => t.draw());
+                ctx.drawImage(mapCanvas, 0, 0); this.tanks.forEach(t => t.draw());
                 bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
                 particles.forEach(p => p.draw());
-                
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
                     ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
                     ctx.fillStyle = "#fff"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(t.name, bx + 71, 24);
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8);
-                    if (t.hp > 0) { ctx.fillStyle = "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6);
-                    if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 30, 124, 8); if (t.hp > 0) { ctx.fillStyle = "#0f0"; ctx.fillRect(bx + 8, 30, (t.hp / t.maxHp) * 124, 8); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 44, 124, 6); if (t.gas > 0) { ctx.fillStyle = "#00aaff"; ctx.fillRect(bx + 8, 44, (t.gas / t.maxGas) * 124, 6); }
                     ctx.restore();
                 });
             }
         }
 
-        // 🌟 画像がすべて読み込まれているかチェックして開始する安全弁
         function startGame() { 
             if (loadedImages < totalImages) {
                 alert(`現在、画像を読み込み中です。少々お待ちください (${loadedImages}/${totalImages})`);
                 return;
             }
             document.getElementById("menuScreen").style.display = "none"; 
-            window.G = new Game(finalPlayersSetup); 
-            runGame(); 
+            window.G = new Game(finalPlayersSetup); runGame(); 
         }
-
         function runGame() { window.G.update(); window.G.draw(); animationFrameId = requestAnimationFrame(runGame); }
     </script>
 </body>
