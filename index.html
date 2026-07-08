@@ -55,6 +55,18 @@
         
         #padFire { background: #d9534f; border: 2px solid #d43f3a; height: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
         #returnMenuBtn { display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); background: #ffaa00; color: #000; border: 4px solid #fff; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 12px; cursor: pointer; z-index: 150; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+        /* 🌟 スマホ横画面対策：ボタンで手動切替、または画面が横長&低いときは自動で切り替わる */
+        #battleLayout { display: block; }
+        #compactToggleBtn { position: fixed; top: 6px; right: 6px; z-index: 90; background: #444; color: #fff; border: 2px solid #777; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.85; }
+        body.compact-mode #debugLog { display: none; }
+        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: flex-start; gap: 6px; max-width: 100%; margin: 0 auto; }
+        body.compact-mode #gameCanvas { max-width: 62%; width: 62%; height: auto; margin: 0; }
+        body.compact-mode #battleUiContainer { flex: 1; max-width: 38%; margin: 0; max-height: 96vh; overflow-y: auto; }
+        body.compact-mode #weaponPanel { flex-direction: column; }
+        body.compact-mode .wpBtn { min-width: unset; max-width: unset; font-size: 11px; padding: 4px 6px; flex: unset; }
+        body.compact-mode #controlPanelGrid { grid-template-columns: 1fr; gap: 6px; }
+        body.compact-mode #padFire { min-height: 44px; }
     </style>
 </head>
 <body>
@@ -105,6 +117,7 @@
         </div>
     </div>
 
+    <div id="battleLayout">
     <canvas id="gameCanvas" width="1200" height="600" tabindex="1"></canvas>
 
     <div id="battleUiContainer">
@@ -137,6 +150,8 @@
             <div id="padFire">🔥 発射<br>(Space)</div>
         </div>
     </div>
+    </div>
+    <button id="compactToggleBtn" onclick="document.body.classList.toggle('compact-mode')" title="画面構成を切り替え">⇄ 表示切替</button>
 
     <script>
         const CharacterData = {
@@ -159,7 +174,7 @@
         // ============================================================
         // 🖼️ 画像アセット管理（index.html由来／非同期プリロード）
         // ============================================================
-        const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {} };
+        const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {}, tree: null };
 
         const MapStages = [
             { id: "stage1", name: "🌱 Simple meadow", mapImg: "M01.png", bgImg: "B01.png", type: "hill" },
@@ -180,7 +195,7 @@
         const MapConfigs = { "hill": { maxItems: 3 }, "canyon": { maxItems: 2 }, "flat": { maxItems: 4 } };
 
         // 🌟 総画像枚数を読み込み開始「前」に確定（デグレ防止：カウンタのズレを起こさない）
-        let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2);
+        let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2) + 1;
         let loadedImages = 0;
 
         function onImageLoad() {
@@ -213,6 +228,11 @@
             ImageAssets.backgrounds[st.id].onload = onImageLoad; ImageAssets.backgrounds[st.id].onerror = onImageLoad;
             ImageAssets.backgrounds[st.id].src = `assets/images/${st.bgImg}`;
         });
+
+        // 🌲 木の画像（1枚絵、根本を画像下端・水平中央に合わせたPNG）
+        ImageAssets.tree = new Image();
+        ImageAssets.tree.onload = onImageLoad; ImageAssets.tree.onerror = onImageLoad;
+        ImageAssets.tree.src = `assets/images/tree.png`;
         // ============================================================
 
         const Teams = ["Red", "Blue", "Yellow", "Green"];
@@ -345,7 +365,7 @@
         // 🌟 地形は「x座標ごとの高さ」ではなく、画像alphaベースの2Dビットマップで管理
         // （M0x.pngの空中足場・オーバーハング・空洞をそのまま当たり判定に反映するため）
         let terrainMap = []; let bullets = []; let particles = []; let introPlanes = []; let supplyItems = [];
-        let visualEffects = []; let treeObjects = [];
+        let visualEffects = []; let treeObjects = []; let screenShakeIntensity = 0;
 
         // 地形の見た目＋当たり判定の実体。M0x.pngをそのまま描画し、削れば穴が開く／盛れば復元する。
         const mapCanvas = document.createElement("canvas");
@@ -467,6 +487,8 @@
             if (radius <= 0) return 0;
             cx = Math.floor(cx); cy = Math.floor(cy);
             if (cx < -radius || cx >= canvas.width + radius) return 0;
+            // 🌟 爆発規模に応じた画面シェイク(小さい弾は控えめ、大きい爆風はしっかり揺れる)
+            screenShakeIntensity = Math.max(screenShakeIntensity, Math.min(14, radius * 0.18));
 
             for (let i = treeObjects.length - 1; i >= 0; i--) {
                 let tree = treeObjects[i];
@@ -491,7 +513,7 @@
             if (window.G) {
                 window.G.tanks.forEach(t => {
                     if (t.hp > 0 && t.hasSpawned) {
-                        let dist = Math.hypot(t.x - cx, (t.y - 28) - cy);
+                        let dist = Math.hypot(t.x - cx, (t.y - 22) - cy);
                         let limitDist = radius + 15; 
                         if (dist < limitDist) {
                             let falloff = (limitDist - dist) / limitDist;
@@ -597,6 +619,27 @@
 
         class SupplyItem { constructor(x, y, type) { this.x = x; this.y = y; this.type = type; } }
 
+        // 💥 撃破演出：「KO!」テキストが弾んでフェードアウト＋放射状の破片パーティクル
+        class KillEffect {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.life = 1.0; this.scale = 0.3;
+                for (let i = 0; i < 16; i++) {
+                    let ang = (Math.PI * 2 / 16) * i;
+                    let spd = 3 + Math.random() * 4;
+                    particles.push(new Particle(x, y, Math.cos(ang) * spd, Math.sin(ang) * spd - 2, "#ffcc00", Math.random() * 4 + 2));
+                }
+            }
+            update() { this.life -= 0.018; this.scale += (1.3 - this.scale) * 0.2; this.y -= 0.4; }
+            draw() {
+                if (this.life <= 0) return;
+                ctx.save(); ctx.globalAlpha = Math.max(0, this.life); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale);
+                ctx.font = "bold 32px sans-serif"; ctx.textAlign = "center"; ctx.lineWidth = 6;
+                ctx.strokeStyle = "#000"; ctx.strokeText("撃破！", 0, 0);
+                ctx.fillStyle = "#ffcc00"; ctx.fillText("撃破！", 0, 0);
+                ctx.restore();
+            }
+        }
+
         class ItemDropPlane {
             constructor(targetX, itemType) { this.x = -100; this.y = 40; this.speed = 10; this.targetX = targetX; this.itemType = itemType; this.hasDropped = false; }
             update() {
@@ -653,8 +696,8 @@
                 let hitTank = null;
                 window.G.tanks.forEach(t => {
                     if (t.hp > 0 && t.id !== this.owner.id && t.hasSpawned) {
-                        let dist = Math.hypot(t.x - this.x, this.y - (t.y - 28));
-                        if (dist < (this.radius + 28)) hitTank = t;
+                        let dist = Math.hypot(t.x - this.x, this.y - (t.y - 22));
+                        if (dist < (this.radius + 22)) hitTank = t;
                     }
                 });
 
@@ -776,9 +819,9 @@
                     visualEffects.push(new RingEffect(cx, cy, 163, "rgba(120, 0, 255, 0.7)", "pull")); 
                     window.G.tanks.forEach(t => {
                         if (t.hp > 0 && t.hasSpawned) {
-                            let dist = Math.hypot(t.x - cx, (t.y - 28) - cy);
+                            let dist = Math.hypot(t.x - cx, (t.y - 22) - cy);
                             if (dist < 163) {
-                                if (!checkLineOfSight(cx, cy, t.x, t.y - 28)) return;
+                                if (!checkLineOfSight(cx, cy, t.x, t.y - 22)) return;
                                 t.hp = Math.max(0, t.hp - Math.floor(33 * (163 - dist) / 163));
                                 t.x += (t.x > cx ? -1 : 1) * (60 * (163 - dist) / 163); t.checkGroundStatus();
                             }
@@ -806,8 +849,11 @@
                     cx = Math.floor(cx); let baseSurfaceY = findSurfaceY(cx, cy);
                     damageTerrain(cx, cy, 26, 13, null, this.owner); 
                     
-                    // 左右反転の方向を飛んできた速度(弾道)から正しく計算
-                    let treeTilt = (this.vx > 0) ? 0.35 : -0.35;
+                    // 🌟 着弾直前の速度ベクトルから実際の入射角を計算し、その角度に応じて木を傾ける
+                    // (真上から垂直に近い着弾ほど直立、横から浅い角度で当たるほど大きく傾く)
+                    let travelAngle = Math.atan2(this.vx, this.vy); // 0=真上から落下(直立)、±PI/2=水平(最大傾斜)
+                    let maxTilt = 0.6; // 傾きの上限(約34°)。完全に横倒しにはしない
+                    let treeTilt = Math.max(-maxTilt, Math.min(maxTilt, travelAngle));
                     treeObjects.push({ x: cx, y: baseSurfaceY, w: 50, h: 90, angle: treeTilt }); 
                     
                     let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
@@ -825,44 +871,46 @@
 
                 if (char === "TT-12") { 
                     cx = Math.floor(cx); cy = Math.floor(cy);
-                    // 🐢 甲羅ドーム：外殻(半径innerR〜outerRの半円環)＋内部空洞＋床、を着弾点中心に生成
-                    let outerR = 70, shellT = 20, innerR = outerR - shellT, floorT = 14;
+                    // 🐢 甲羅ドーム（楕円形）：横幅=戦車3台弱、高さ=戦車2台弱(戦車64px基準)を目安にサイズ調整
+                    let outerRx = 90, outerRy = 118, shellRatio = 0.71;
+                    let innerRx = Math.floor(outerRx * shellRatio), innerRy = Math.floor(outerRy * shellRatio), floorT = 14;
 
-                    // terrainMap更新：上半分のみが対象（殻は環状、内側は空洞）
-                    for (let x = Math.max(0, cx - outerR); x < Math.min(canvas.width, cx + outerR); x++) {
-                        for (let y = Math.max(0, cy - outerR); y <= cy; y++) {
+                    // terrainMap更新：上半分のみが対象（殻は楕円環状、内側は空洞）
+                    for (let x = Math.max(0, cx - outerRx); x < Math.min(canvas.width, cx + outerRx); x++) {
+                        for (let y = Math.max(0, cy - outerRy); y <= cy; y++) {
                             let dx = x - cx, dy = y - cy;
-                            let distSq = dx * dx + dy * dy;
-                            if (distSq > outerR * outerR) continue;
-                            terrainMap[x][y] = (distSq >= innerR * innerR) ? 1 : 0;
+                            let normOuter = (dx * dx) / (outerRx * outerRx) + (dy * dy) / (outerRy * outerRy);
+                            if (normOuter > 1) continue;
+                            let normInner = (dx * dx) / (innerRx * innerRx) + (dy * dy) / (innerRy * innerRy);
+                            terrainMap[x][y] = (normInner >= 1) ? 1 : 0;
                         }
                     }
                     // 床：地形の有無に関わらず強制的に作る（谷間で発動すれば橋としても機能する）
-                    for (let x = Math.max(0, cx - innerR); x < Math.min(canvas.width, cx + innerR); x++) {
+                    for (let x = Math.max(0, cx - innerRx); x < Math.min(canvas.width, cx + innerRx); x++) {
                         for (let y = cy; y < Math.min(canvas.height, cy + floorT); y++) terrainMap[x][y] = 1;
                     }
 
                     // 見た目：内部をくり抜く→殻を描く→床を描く
                     mapCtx.save(); mapCtx.globalCompositeOperation = 'destination-out';
-                    mapCtx.beginPath(); mapCtx.moveTo(cx - innerR, cy); mapCtx.arc(cx, cy, innerR, Math.PI, 0, false); mapCtx.closePath(); mapCtx.fill();
+                    mapCtx.beginPath(); mapCtx.moveTo(cx - innerRx, cy); mapCtx.ellipse(cx, cy, innerRx, innerRy, 0, Math.PI, 0, false); mapCtx.closePath(); mapCtx.fill();
                     mapCtx.restore();
 
                     mapCtx.save();
                     let shellPath = new Path2D();
-                    shellPath.moveTo(cx - outerR, cy);
-                    shellPath.arc(cx, cy, outerR, Math.PI, 0, false);
-                    shellPath.lineTo(cx + innerR, cy);
-                    shellPath.arc(cx, cy, innerR, 0, Math.PI, true);
+                    shellPath.moveTo(cx - outerRx, cy);
+                    shellPath.ellipse(cx, cy, outerRx, outerRy, 0, Math.PI, 0, false);
+                    shellPath.lineTo(cx + innerRx, cy);
+                    shellPath.ellipse(cx, cy, innerRx, innerRy, 0, 0, Math.PI, true);
                     shellPath.closePath();
                     mapCtx.clip(shellPath, 'evenodd');
-                    mapCtx.fillStyle = "#4a7c3f"; mapCtx.fillRect(cx - outerR, cy - outerR, outerR * 2, outerR);
+                    mapCtx.fillStyle = "#4a7c3f"; mapCtx.fillRect(cx - outerRx, cy - outerRy, outerRx * 2, outerRy);
                     if (currentStageImg && currentStageImg.complete && currentStageImg.width > 0) {
                         mapCtx.drawImage(currentStageImg, 0, 0, canvas.width, canvas.height);
                     }
                     mapCtx.restore();
 
-                    mapCtx.save(); mapCtx.beginPath(); mapCtx.rect(cx - innerR, cy, innerR * 2, floorT); mapCtx.clip();
-                    mapCtx.fillStyle = "#6b8e23"; mapCtx.fillRect(cx - innerR, cy, innerR * 2, floorT);
+                    mapCtx.save(); mapCtx.beginPath(); mapCtx.rect(cx - innerRx, cy, innerRx * 2, floorT); mapCtx.clip();
+                    mapCtx.fillStyle = "#6b8e23"; mapCtx.fillRect(cx - innerRx, cy, innerRx * 2, floorT);
                     if (currentStageImg && currentStageImg.complete && currentStageImg.width > 0) {
                         mapCtx.drawImage(currentStageImg, 0, 0, canvas.width, canvas.height);
                     }
@@ -876,9 +924,9 @@
                     visualEffects.push(new RingEffect(cx, cy, 163, "rgba(0, 255, 255, 0.8)", "wave")); 
                     window.G.tanks.forEach(t => {
                         if (t.hp > 0 && t.hasSpawned) {
-                            let dist = Math.hypot(t.x - cx, (t.y - 28) - cy);
+                            let dist = Math.hypot(t.x - cx, (t.y - 22) - cy);
                             if (dist < 163) {
-                                if (!checkLineOfSight(cx, cy, t.x, t.y - 28)) return;
+                                if (!checkLineOfSight(cx, cy, t.x, t.y - 22)) return;
                                 t.hp = Math.max(0, t.hp - Math.floor(20 * (163 - dist) / 163));
                                 t.x += (t.x > cx ? 1 : -1) * (150 * (163 - dist) / 163); t.checkGroundStatus();
                             }
@@ -974,7 +1022,7 @@
                     }
                     // 🌟 本物の谷間に落ちて底が無い場合はそのまま消滅させる(配列に残り続けるのを防ぐ)
                     if (item.y > canvas.height + 150) { supplyItems.splice(i, 1); continue; }
-                    if (Math.hypot(this.x - item.x, (this.y - 14) - item.y) < 42) {
+                    if (Math.hypot(this.x - item.x, (this.y - 11) - item.y) < 34) {
                         supplyItems.splice(i, 1);
                         if (item.type === "apple") this.hp = Math.min(this.maxHp, this.hp + 25);
                         else if (item.type === "medkit") this.hp = Math.min(this.maxHp, this.hp + 50);
@@ -1103,31 +1151,32 @@
                 let hasImg = imgTank && imgTank.complete && imgTank.width > 0 && imgTurret && imgTurret.complete && imgTurret.width > 0;
 
                 if (hasImg) {
-                    // 🌟 サイズ2倍化：当初仕様の40x40の倍(80px)を基準に、画像のアスペクト比を保って描画
-                    let tankH = 80, tankW = tankH * (imgTank.width / imgTank.height);
-                    let turretW = 60, turretH = turretW * (imgTurret.height / imgTurret.width);
+                    // 🌟 サイズ調整：80pxから2割縮小して64pxに。画像下端をピボット(接地点)ちょうどに合わせてめり込みを解消
+                    let tankH = 64, tankW = tankH * (imgTank.width / imgTank.height);
+                    let turretW = 48, turretH = turretW * (imgTurret.height / imgTurret.width);
 
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, 12);
+                    ctx.save(); ctx.translate(0, 10);
                     let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
-                    ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -12, -turretH / 2, turretW, turretH); ctx.restore();
-                    ctx.drawImage(imgTank, -tankW / 2, -42, tankW, tankH); ctx.restore();
+                    ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -10, -turretH / 2, turretW, turretH); ctx.restore();
+                    // 🌟 -tankHで描画(=画像の下端がちょうどy=0のピボットに接する。これ以上下にはみ出さない)
+                    ctx.drawImage(imgTank, -tankW / 2, -tankH, tankW, tankH); ctx.restore();
                 } else {
-                    // 🌟 画像未ロード時のフォールバック：従来のベクター描画を2倍サイズで維持
-                    ctx.strokeStyle = "#444"; ctx.lineWidth = 6;
-                    ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(Math.cos(this.angle)*44, -24 + Math.sin(this.angle)*44); ctx.stroke();
-                    ctx.fillStyle = this.color; ctx.fillRect(-32, -28, 64, 20); 
-                    ctx.fillStyle = "#333"; ctx.fillRect(-38, -10, 76, 12);
+                    // 🌟 画像未ロード時のフォールバック：こちらも下端をピボットに揃えて描画
+                    ctx.strokeStyle = "#444"; ctx.lineWidth = 5;
+                    ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(Math.cos(this.angle)*35, -20 + Math.sin(this.angle)*35); ctx.stroke();
+                    ctx.fillStyle = this.color; ctx.fillRect(-26, -18, 52, 12); 
+                    ctx.fillStyle = "#333"; ctx.fillRect(-30, -6, 60, 6);
                 }
 
                 ctx.fillStyle = (selectedRuleMode === 'team') ? (this.team === "Red"?"#ff4d4d":this.team === "Blue"?"#4d94ff":this.team === "Yellow"?"#ffdd4d":"#4dff4d") : "#fff";
-                ctx.beginPath(); ctx.arc(0, -42, 4, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -56);
+                ctx.beginPath(); ctx.arc(0, -64, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -78);
 
                 if (window.G && window.G.tanks[window.G.turnIdx] === this && !window.G.isIntro && !window.G.isGameOver) {
                     let bobbing = Math.sin(performance.now() * 0.01) * 3; 
                     ctx.fillStyle = "#ff3333";
-                    ctx.beginPath(); ctx.moveTo(0, -74 + bobbing); ctx.lineTo(-6, -82 + bobbing); ctx.lineTo(6, -82 + bobbing); ctx.closePath(); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(0, -96 + bobbing); ctx.lineTo(-6, -104 + bobbing); ctx.lineTo(6, -104 + bobbing); ctx.closePath(); ctx.fill();
                 }
                 ctx.restore();
             }
@@ -1222,6 +1271,14 @@
                 if (!this.isShooting && bullets.length === 0 && !isNekoComboing) { this.turnTimer -= dt; if (this.turnTimer <= 0) { this.nextTurn(); return; } }
                 
                 this.tanks.forEach((t, idx) => { if(t.hasSpawned) t.update(idx === this.turnIdx); });
+                // 💥 撃破検知：HPが0になった瞬間を捉えて演出＋シェイクを発火（1体につき1回だけ）
+                this.tanks.forEach(t => {
+                    if (t.hp <= 0 && t.hasSpawned && !t.koEffectShown) {
+                        t.koEffectShown = true;
+                        visualEffects.push(new KillEffect(t.x, t.y - 40));
+                        screenShakeIntensity = Math.max(screenShakeIntensity, 12);
+                    }
+                });
                 introPlanes.forEach(p => p.update()); 
                 for (let i = bullets.length - 1; i >= 0; i--) { bullets[i].update(this.windPower); if (bullets[i].isDead) bullets.splice(i, 1); }
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
@@ -1235,6 +1292,16 @@
 
             draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 🌟 画面シェイク：背景〜エフェクトまでの「ワールド」部分にだけ適用し、上部スコアボードは固定のまま揺らさない
+                let shakeX = 0, shakeY = 0;
+                if (screenShakeIntensity > 0.15) {
+                    shakeX = (Math.random() * 2 - 1) * screenShakeIntensity;
+                    shakeY = (Math.random() * 2 - 1) * screenShakeIntensity;
+                    screenShakeIntensity *= 0.85;
+                } else { screenShakeIntensity = 0; }
+                ctx.save(); ctx.translate(shakeX, shakeY);
+
                 let imgBg = ImageAssets.backgrounds[selectedStageObj.id];
                 if (imgBg && imgBg.complete && imgBg.width > 0) { ctx.drawImage(imgBg, 0, 0, canvas.width, canvas.height); }
                 else { ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
@@ -1242,10 +1309,17 @@
                 ctx.drawImage(mapCanvas, 0, 0);
 
                 treeObjects.forEach(tree => {
-                    ctx.save(); ctx.translate(tree.x, tree.y); ctx.rotate(tree.angle); 
-                    ctx.fillStyle = "#8B4513"; ctx.fillRect(-(tree.w / 6), -tree.h, tree.w / 3, tree.h);
-                    ctx.fillStyle = "#228B22"; ctx.fillRect(-(tree.w / 2), -tree.h - 15, tree.w, tree.w);
-                    ctx.fillStyle = "#32CD32"; ctx.fillRect(-(tree.w / 3), -tree.h - 25, (tree.w / 3) * 2, tree.w * 0.6);
+                    ctx.save(); ctx.translate(tree.x, tree.y); ctx.rotate(tree.angle);
+                    let imgTree = ImageAssets.tree;
+                    if (imgTree && imgTree.complete && imgTree.width > 0) {
+                        // 🌟 木の総合的な見た目の高さ(幹90+葉の重なり分)に合わせてスケール、根本(画像下端)をpivotに合わせる
+                        let drawH = tree.h + 55, drawW = drawH * (imgTree.width / imgTree.height);
+                        ctx.drawImage(imgTree, -drawW / 2, -drawH, drawW, drawH);
+                    } else {
+                        ctx.fillStyle = "#8B4513"; ctx.fillRect(-(tree.w / 6), -tree.h, tree.w / 3, tree.h);
+                        ctx.fillStyle = "#228B22"; ctx.fillRect(-(tree.w / 2), -tree.h - 15, tree.w, tree.w);
+                        ctx.fillStyle = "#32CD32"; ctx.fillRect(-(tree.w / 3), -tree.h - 25, (tree.w / 3) * 2, tree.w * 0.6);
+                    }
                     ctx.restore();
                 });
 
@@ -1263,6 +1337,8 @@
                     ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(canvas.width/2 - 150, 85, 300, 35);
                     ctx.fillStyle = "#fff"; ctx.font = "bold 13px monospace"; ctx.textAlign = "center"; ctx.fillText(infoStr, canvas.width/2, 106);
                 }
+
+                ctx.restore(); // 🌟 シェイクここまで。以降のスコアボードUIは固定表示
 
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
@@ -1283,6 +1359,16 @@
                 });
             }
         }
+
+        // 🌟 横長で縦が低い画面(スマホ横画面など)は自動でコンパクトモードにする。ボタンでも手動切替可能
+        function checkAutoCompact() {
+            if (window.innerHeight < 500 && window.innerWidth > window.innerHeight) {
+                document.body.classList.add('compact-mode');
+            }
+        }
+        window.addEventListener('resize', checkAutoCompact);
+        window.addEventListener('orientationchange', checkAutoCompact);
+        checkAutoCompact();
 
         initHybridInputBinds();
         function startGame() {
