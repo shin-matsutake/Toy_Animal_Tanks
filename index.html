@@ -34,39 +34,53 @@
         .nav-btn.prev { background: #6c757d; }
         .team-Red { color: #ff4d4d; } .team-Blue { color: #4d94ff; } .team-Yellow { color: #ffdd4d; } .team-Green { color: #4dff4d; }
         
-        #battleUiContainer { max-width: 1200px; margin: 5px auto; background: #333; padding: 10px; border-radius: 8px; box-sizing: border-box; }
-        #weaponPanel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; background: #222; padding: 6px; border-radius: 6px; }
+        #battleUiContainer { max-width: 1200px; margin: 5px auto; background: #333; padding: 10px; border-radius: 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+        #leftGroup { display: flex; flex-direction: column; gap: 8px; }
+        #rightGroup { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        #weaponPanel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; background: #222; padding: 6px; border-radius: 6px; }
         .wpBtn { background: #444; color: #fff; border: 2px solid #666; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; flex: 1; min-width: 100px; max-width: 150px; }
         .wpBtn.active { background: #0056b3; border-color: #0ff; box-shadow: 0 0 8px rgba(0,255,255,0.5); }
         #passBtn { background: #422; color: #ff4; font-weight: bold; border: 2px solid #833; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer; }
-        
-        #controlPanelGrid { display: grid; grid-template-columns: 0.9fr 1.4fr 0.9fr; gap: 10px; align-items: center; background: #252525; padding: 10px; border-radius: 8px; }
-        .move-row { display: flex; gap: 6px; width: 100%; height: 100%; }
-        .angle-column { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-        
-        .padBtn { background: #555; color: white; border: 2px solid #777; border-radius: 8px; font-size: 14px; font-weight: bold; padding: 10px 0; cursor: pointer; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px #333; }
+
+        /* 🌟 十字パッド：上下(砲高/砲低)と左右(移動)を1つのクロス型にまとめて配置 */
+        #dpadCross { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 4px; width: 160px; aspect-ratio: 1; margin: 0 auto; }
+        #btnUp { grid-column: 2; grid-row: 1; }
+        #btnLeft { grid-column: 1; grid-row: 2; }
+        #btnRight { grid-column: 3; grid-row: 2; }
+        #btnDown { grid-column: 2; grid-row: 3; }
+        .padSub { display: block; font-size: 9px; font-weight: normal; opacity: 0.8; }
+
+        .padBtn { background: #555; color: white; border: 2px solid #777; border-radius: 8px; font-size: 16px; font-weight: bold; padding: 4px 0; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 3px #333; }
         .padBtn:active { transform: translateY(2px); box-shadow: 0 1px #111; }
-        
-        #centerControls { display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%; }
+
         #powerGaugeWrapper { position: relative; width: 100%; height: 28px; background-color: #111; border-radius: 4px; overflow: hidden; border: 1px solid #555; }
-        #powerBar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff9100, #ff3d00); }
-        #powerMarker { position: absolute; top: 0; width: 4px; height: 100%; background-color: rgba(25, 25, 255, 0.75); box-shadow: 0 0 6px #fff; display: none; pointer-events: none; }
-        #powerText { position: absolute; top: 0; left: 10px; line-height: 28px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; }
-        
-        #padFire { background: #d9534f; border: 2px solid #d43f3a; height: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
+        #powerBar { height: 100%; width: var(--pct, 0%); background: linear-gradient(90deg, #ff9100, #ff3d00); }
+        #powerMarker { position: absolute; top: 0; left: var(--pct, 0%); width: 4px; height: 100%; background-color: rgba(25, 25, 255, 0.75); box-shadow: 0 0 6px #fff; display: none; pointer-events: none; }
+        #powerText { position: absolute; top: 0; left: 10px; line-height: 28px; font-size: 13px; font-weight: bold; color: #fff; text-shadow: 1px 1px 2px #000; white-space: nowrap; }
+
+        #padFire { background: #d9534f; border: 2px solid #d43f3a; width: 100%; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
         #returnMenuBtn { display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); background: #ffaa00; color: #000; border: 4px solid #fff; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 12px; cursor: pointer; z-index: 150; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
 
-        /* 🌟 スマホ横画面対策：ボタンで手動切替、または画面が横長&低いときは自動で切り替わる */
+        /* 🌟 スマホ横画面対策：ボタンで手動切替、または画面が横長&低いときは自動で切り替わる。
+           左(武器+十字パッド)・中央(canvas)・右(縦パワーゲージ+発射)の3カラムにJSでDOM要素ごと移動する */
         #battleLayout { display: block; }
+        #leftControls, #rightControls { display: none; }
         #compactToggleBtn { position: fixed; top: 6px; right: 6px; z-index: 90; background: #444; color: #fff; border: 2px solid #777; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.85; }
         body.compact-mode #debugLog { display: none; }
-        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: flex-start; gap: 6px; max-width: 100%; margin: 0 auto; }
-        body.compact-mode #gameCanvas { max-width: 62%; width: 62%; height: auto; margin: 0; }
-        body.compact-mode #battleUiContainer { flex: 1; max-width: 38%; margin: 0; max-height: 96vh; overflow-y: auto; }
+        body.compact-mode #battleUiContainer { display: none; }
+        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: stretch; gap: 6px; max-width: 100%; margin: 0 auto; height: 96vh; }
+        body.compact-mode #leftControls { display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; width: 150px; overflow-y: auto; background: #333; padding: 6px; border-radius: 8px; }
+        body.compact-mode #rightControls { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; width: 60px; background: #333; padding: 6px; border-radius: 8px; }
+        body.compact-mode #gameCanvas { flex: 1; width: auto; max-width: none; height: 100%; object-fit: contain; margin: 0; }
         body.compact-mode #weaponPanel { flex-direction: column; }
         body.compact-mode .wpBtn { min-width: unset; max-width: unset; font-size: 11px; padding: 4px 6px; flex: unset; }
-        body.compact-mode #controlPanelGrid { grid-template-columns: 1fr; gap: 6px; }
-        body.compact-mode #padFire { min-height: 44px; }
+        body.compact-mode #dpadCross { width: 100%; }
+        /* 🌟 縦向きパワーゲージ */
+        body.compact-mode #powerGaugeWrapper { width: 34px; flex: 1; min-height: 100px; }
+        body.compact-mode #powerBar { width: 100%; height: var(--pct, 0%); position: absolute; bottom: 0; left: 0; background: linear-gradient(0deg, #ff9100, #ff3d00); }
+        body.compact-mode #powerMarker { left: 0; top: auto; bottom: var(--pct, 0%); width: 100%; height: 4px; }
+        body.compact-mode #powerText { writing-mode: vertical-rl; text-orientation: mixed; top: 6px; left: 50%; transform: translateX(-50%); line-height: normal; }
+        body.compact-mode #padFire { min-height: 60px; }
     </style>
 </head>
 <body>
@@ -118,40 +132,40 @@
     </div>
 
     <div id="battleLayout">
+    <div id="leftControls"></div>
     <canvas id="gameCanvas" width="1200" height="600" tabindex="1"></canvas>
+    <div id="rightControls"></div>
+    </div>
 
     <div id="battleUiContainer">
-        <div id="weaponPanel">
-            <button id="wp0" class="wpBtn active" onclick="clickWpBtn(0)">通常弾</button>
-            <button id="wp1" class="wpBtn" onclick="clickWpBtn(1)">🎯 狙撃弾(1)</button>
-            <button id="wp2" class="wpBtn" onclick="clickWpBtn(2)">🔥 三連弾(1)</button>
-            <button id="wp3" class="wpBtn" onclick="clickWpBtn(3)">⛓️ 鉄球弾(1)</button>
-            <button id="wp4" class="wpBtn" onclick="clickWpBtn(4)">🌀 ワープ弾(1)</button>
-            <button id="wp5" class="wpBtn" onclick="clickWpBtn(5)">🌟 固有弾(1)</button>
-            <button id="passBtn" onclick="clickPassBtn()">🔄 パス</button>
-        </div>
-        
-        <div id="controlPanelGrid">
-            <div class="move-row">
-                <div class="padBtn" id="btnLeft">◀ 移動</div>
-                <div class="padBtn" id="btnRight">移動 ▶</div>
+        <div id="leftGroup">
+            <div id="weaponPanel">
+                <button id="wp0" class="wpBtn active" onclick="clickWpBtn(0)">通常弾</button>
+                <button id="wp1" class="wpBtn" onclick="clickWpBtn(1)">🎯 狙撃弾(1)</button>
+                <button id="wp2" class="wpBtn" onclick="clickWpBtn(2)">🔥 三連弾(1)</button>
+                <button id="wp3" class="wpBtn" onclick="clickWpBtn(3)">⛓️ 鉄球弾(1)</button>
+                <button id="wp4" class="wpBtn" onclick="clickWpBtn(4)">🌀 ワープ弾(1)</button>
+                <button id="wp5" class="wpBtn" onclick="clickWpBtn(5)">🌟 固有弾(1)</button>
+                <button id="passBtn" onclick="clickPassBtn()">🔄 パス</button>
             </div>
-            <div id="centerControls">
-                <div id="powerGaugeWrapper">
-                    <div id="powerBar"></div>
-                    <div id="powerMarker"></div>
-                    <div id="powerText">パワー: 0%</div>
-                </div>
-                <div class="angle-column">
-                    <div class="padBtn" id="btnUp" style="padding: 5px 0;">▲ 砲高</div>
-                    <div class="padBtn" id="btnDown" style="padding: 5px 0;">▼ 砲低</div>
-                </div>
+            <div id="dpadCross">
+                <div class="padBtn" id="btnUp">▲<span class="padSub">砲高</span></div>
+                <div class="padBtn" id="btnLeft">◀<span class="padSub">移動</span></div>
+                <div class="padBtn" id="btnRight">▶<span class="padSub">移動</span></div>
+                <div class="padBtn" id="btnDown">▼<span class="padSub">砲低</span></div>
+            </div>
+        </div>
+
+        <div id="rightGroup">
+            <div id="powerGaugeWrapper">
+                <div id="powerBar"></div>
+                <div id="powerMarker"></div>
+                <div id="powerText">パワー: 0%</div>
             </div>
             <div id="padFire">🔥 発射<br>(Space)</div>
         </div>
     </div>
-    </div>
-    <button id="compactToggleBtn" onclick="document.body.classList.toggle('compact-mode')" title="画面構成を切り替え">⇄ 表示切替</button>
+    <button id="compactToggleBtn" onclick="toggleCompactManually()" title="画面構成を切り替え">⇄ 表示切替</button>
 
     <script>
         const CharacterData = {
@@ -295,13 +309,8 @@
                 let cx = Math.floor(startX + (endX - startX) * t);
                 let cy = startY + (endY - startY) * t;
                 // 🌟 2Dビットマップ地形対応：高さ配列ではなく、その点が地面かどうかを直接判定
-                // （空洞・オーバーハングのあるマップでも正しく視線が通る/遮られる）
+                // （空洞・オーバーハングのあるマップでも正しく視線が通る/遮られる。木の幹もterrainMapに焼き込まれているのでここで自動的に判定される）
                 if (isGround(cx, cy)) return false;
-                for (let tree of treeObjects) {
-                    if (Math.abs(cx - tree.x) < (tree.w / 2) && cy >= (tree.y - tree.h) && cy <= tree.y) {
-                        return false;
-                    }
-                }
             }
             return true;
         }
@@ -482,6 +491,29 @@
             }
         }
 
+        // 🌟 木を実際に足場(terrainMap)として焼き込む／取り除く。これにより「木の上に乗る」「横向きの木を橋として渡る」が
+        // 既存の地形当たり判定システムだけで自然に成立する（Tank側の特別処理は不要）。
+        function getTreeTrunkLine(tree) {
+            let dirX = Math.sin(tree.angle), dirY = -Math.cos(tree.angle);
+            return { x0: tree.x, y0: tree.y, x1: tree.x + dirX * tree.h, y1: tree.y + dirY * tree.h, thickness: tree.w * 0.5 };
+        }
+        function setTrunkGround(tree, value) {
+            let line = getTreeTrunkLine(tree);
+            let steps = Math.max(1, Math.ceil(Math.hypot(line.x1 - line.x0, line.y1 - line.y0)));
+            let half = Math.ceil(line.thickness / 2);
+            for (let s = 0; s <= steps; s++) {
+                let t = s / steps;
+                let px = line.x0 + (line.x1 - line.x0) * t, py = line.y0 + (line.y1 - line.y0) * t;
+                for (let ox = -half; ox <= half; ox++) {
+                    for (let oy = -half; oy <= half; oy++) {
+                        if (ox * ox + oy * oy > half * half) continue;
+                        let x = Math.floor(px + ox), y = Math.floor(py + oy);
+                        if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) terrainMap[x][y] = value;
+                    }
+                }
+            }
+        }
+
         // 地形を掘る（既存の呼び出しシグネチャ・ダメージ計算ロジックはベース版を完全維持）
         function damageTerrain(cx, cy, radius, maxDmg = 25, subBulletTracker = null, ownerTank = null) {
             if (radius <= 0) return 0;
@@ -492,8 +524,10 @@
 
             for (let i = treeObjects.length - 1; i >= 0; i--) {
                 let tree = treeObjects[i];
-                let distToTree = Math.hypot(tree.x - cx, (tree.y - tree.h/2) - cy);
-                if (distToTree < (radius + 25)) treeObjects.splice(i, 1);
+                let line = getTreeTrunkLine(tree);
+                let midX = (line.x0 + line.x1) / 2, midY = (line.y0 + line.y1) / 2;
+                let distToTree = Math.hypot(midX - cx, midY - cy);
+                if (distToTree < (radius + 25)) { setTrunkGround(tree, 0); treeObjects.splice(i, 1); }
             }
 
             // ビットマップ上に円形の穴を開ける＋見た目（mapCanvas）も同時にくり抜く
@@ -846,15 +880,16 @@
                 
                 // 🦝 タヌキ固有：角度反転デグレード修正、盛り上げカット、木を頑丈に(34x75 → 50x90)
                 if (char === "RD-09") { 
-                    cx = Math.floor(cx); let baseSurfaceY = findSurfaceY(cx, cy);
                     damageTerrain(cx, cy, 26, 13, null, this.owner); 
                     
-                    // 🌟 着弾直前の速度ベクトルから実際の入射角を計算し、その角度に応じて木を傾ける
-                    // (真上から垂直に近い着弾ほど直立、横から浅い角度で当たるほど大きく傾く)
-                    let travelAngle = Math.atan2(this.vx, this.vy); // 0=真上から落下(直立)、±PI/2=水平(最大傾斜)
-                    let maxTilt = 0.6; // 傾きの上限(約34°)。完全に横倒しにはしない
-                    let treeTilt = Math.max(-maxTilt, Math.min(maxTilt, travelAngle));
-                    treeObjects.push({ x: cx, y: baseSurfaceY, w: 50, h: 90, angle: treeTilt }); 
+                    // 🌟 木は「弾が飛んできた方向」に伸びる＝進行方向(vx,vy)の逆向き。
+                    // 真上から落下→直立、横から浅い角度で当たった(=壁に当たった)→ほぼ水平、という挙動が自然に出る
+                    let treeTilt = Math.atan2(-this.vx, this.vy);
+
+                    // 🌟 根本は実際の着弾点(cx,cy)そのもの（壁に当たった場合、壁の上ではなく実際に当たった側面が根本になる）
+                    let tree = { x: cx, y: cy, w: 50, h: 90, angle: treeTilt };
+                    treeObjects.push(tree);
+                    setTrunkGround(tree, 1); // 🌟 実際に足場として機能させる(木の上に乗る／横向きなら橋として渡れる)
                     
                     let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
                     if (supplyItems.length < currentLimit) {
@@ -1041,7 +1076,7 @@
 
                 if (this.isCharging && !this.isCpu) {
                     let pct = ((this.chargePower - 2) / 10) * 100;
-                    document.getElementById("powerBar").style.width = `${pct}%`;
+                    document.getElementById("powerBar").style.setProperty("--pct", `${pct}%`);
                     document.getElementById("powerText").textContent = `パワー: ${Math.floor(pct)}%`;
                 }
 
@@ -1087,7 +1122,7 @@
                     if (window.G.isShooting || bullets.length > 0) return; 
                     window.G.isShooting = true; this.fire(this.chargePower);
                     this.chargePower = 2; this.chargeDirection = 1;
-                    document.getElementById("powerBar").style.width = "0%";
+                    document.getElementById("powerBar").style.setProperty("--pct", "0%");
                     document.getElementById("powerText").textContent = "パワー: 0%"; return;
                 }
 
@@ -1156,7 +1191,7 @@
                     let turretW = 48, turretH = turretW * (imgTurret.height / imgTurret.width);
 
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, 10);
+                    ctx.save(); ctx.translate(0, -34);
                     let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
                     ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -10, -turretH / 2, turretW, turretH); ctx.restore();
                     // 🌟 -tankHで描画(=画像の下端がちょうどy=0のピボットに接する。これ以上下にはみ出さない)
@@ -1199,7 +1234,7 @@
             updatePowerMarker(tank) {
                 const marker = document.getElementById("powerMarker");
                 if (tank && !tank.isCpu && tank.lastPower !== null) {
-                    let pct = ((tank.lastPower - 2) / 10) * 100; marker.style.left = `${pct}%`; marker.style.display = "block";
+                    let pct = ((tank.lastPower - 2) / 10) * 100; marker.style.setProperty("--pct", `${pct}%`); marker.style.display = "block";
                 } else { marker.style.display = "none"; }
             }
 
@@ -1360,10 +1395,34 @@
             }
         }
 
+        // 🌟 leftGroup(武器+十字パッド)とrightGroup(縦パワーゲージ+発射)を、コンパクトモードの左右カラムへ実際にDOM移動する。
+        // ID・イベントリスナーは要素ごと移動するのでそのまま維持される。
+        function applyCompactLayout(isCompact) {
+            const leftControls = document.getElementById('leftControls');
+            const rightControls = document.getElementById('rightControls');
+            const battleUiContainer = document.getElementById('battleUiContainer');
+            const leftGroup = document.getElementById('leftGroup');
+            const rightGroup = document.getElementById('rightGroup');
+            if (isCompact) {
+                leftControls.appendChild(leftGroup);
+                rightControls.appendChild(rightGroup);
+            } else {
+                battleUiContainer.appendChild(leftGroup);
+                battleUiContainer.appendChild(rightGroup);
+            }
+        }
+
+        function toggleCompactManually() {
+            let isCompact = document.body.classList.toggle('compact-mode');
+            applyCompactLayout(isCompact);
+        }
+
         // 🌟 横長で縦が低い画面(スマホ横画面など)は自動でコンパクトモードにする。ボタンでも手動切替可能
         function checkAutoCompact() {
-            if (window.innerHeight < 500 && window.innerWidth > window.innerHeight) {
-                document.body.classList.add('compact-mode');
+            let shouldCompact = window.innerHeight < 500 && window.innerWidth > window.innerHeight;
+            if (shouldCompact !== document.body.classList.contains('compact-mode')) {
+                document.body.classList.toggle('compact-mode', shouldCompact);
+                applyCompactLayout(shouldCompact);
             }
         }
         window.addEventListener('resize', checkAutoCompact);
