@@ -58,34 +58,30 @@
         #padFire { background: #d9534f; border: 2px solid #d43f3a; width: 100%; flex: 1; font-size: 14px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px #962d2a; box-sizing: border-box; min-height: 60px; padding: 5px; }
         #returnMenuBtn { display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); background: #ffaa00; color: #000; border: 4px solid #fff; padding: 18px 36px; font-size: 22px; font-weight: bold; border-radius: 12px; cursor: pointer; z-index: 150; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
 
-        /* 🌟 コンパクトモード時のみ使う十字パッドの受け皿。通常時は空で非表示 */
-        #dpadCross { display: none; }
-
         /* 🌟 スマホ横画面対策：ボタンで手動切替、または画面が横長&低いときは自動で切り替わる。
-           左(武器+十字パッド)・中央(canvas)・右(縦パワーゲージ+発射)の3カラムにJSでDOM要素ごと移動する */
+           左(武器+左右移動)・中央(canvas)・右(砲高/砲低+発射)・下(横長パワーゲージ)にJSでDOM要素ごと移動する */
         #battleLayout { display: block; }
-        #leftControls, #rightControls { display: none; }
+        #leftControls, #rightControls, #bottomBar { display: none; }
         #compactToggleBtn { position: fixed; top: 6px; right: 6px; z-index: 90; background: #444; color: #fff; border: 2px solid #777; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.85; }
         body.compact-mode #debugLog { display: none; }
         body.compact-mode #battleUiContainer { display: none; }
-        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: stretch; justify-content: center; gap: 6px; max-width: 100%; margin: 0 auto; height: 96vh; min-height: 0; }
-        body.compact-mode #leftControls { display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; width: 140px; flex-shrink: 0; overflow-y: auto; background: #333; padding: 6px; border-radius: 8px; }
-        body.compact-mode #rightControls { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; width: 56px; flex-shrink: 0; background: #333; padding: 6px; border-radius: 8px; }
+        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: stretch; justify-content: center; gap: 6px; max-width: 100%; margin: 0 auto; height: 88vh; min-height: 0; }
+        body.compact-mode #leftControls { display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; width: 130px; flex-shrink: 0; overflow-y: auto; background: #333; padding: 6px; border-radius: 8px; }
+        body.compact-mode #rightControls { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-end; gap: 6px; width: 90px; flex-shrink: 0; background: #333; padding: 6px; border-radius: 8px; }
         /* 🌟 canvasは画面に収まるサイズへJSで実寸を計算して当てる(fitCompactCanvas)。ここは中央寄せの土台のみ */
         body.compact-mode #gameCanvas { flex: 0 1 auto; min-width: 0; min-height: 0; margin: auto; }
         body.compact-mode #weaponPanel { flex-direction: column; margin-bottom: 0; }
         body.compact-mode .wpBtn { min-width: unset; max-width: unset; font-size: 11px; padding: 4px 6px; flex: unset; }
-        body.compact-mode #dpadCross { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 4px; width: 100%; aspect-ratio: 1; margin: 0 auto; }
-        body.compact-mode #btnUp { grid-column: 2; grid-row: 1; }
-        body.compact-mode #btnLeft { grid-column: 1; grid-row: 2; }
-        body.compact-mode #btnRight { grid-column: 3; grid-row: 2; }
-        body.compact-mode #btnDown { grid-column: 2; grid-row: 3; }
-        /* 🌟 縦向きパワーゲージ */
-        body.compact-mode #powerGaugeWrapper { width: 34px; flex: 1; min-height: 100px; }
-        body.compact-mode #powerBar { width: 100%; height: var(--pct, 0%); position: absolute; bottom: 0; left: 0; background: linear-gradient(0deg, #ff9100, #ff3d00); }
-        body.compact-mode #powerMarker { left: 0; top: auto; bottom: var(--pct, 0%); width: 100%; height: 4px; }
-        body.compact-mode #powerText { writing-mode: vertical-rl; text-orientation: mixed; top: 6px; left: 50%; transform: translateX(-50%); line-height: normal; }
-        body.compact-mode #padFire { min-height: 60px; flex-shrink: 0; }
+        body.compact-mode #btnLeft, body.compact-mode #btnRight { flex: 1; }
+        body.compact-mode #btnUp, body.compact-mode #btnDown { flex: 1; }
+        /* 🌟 発射ボタンは少し小さめに。上下ボタンの下(=右カラムの下側)に配置 */
+        body.compact-mode #padFire { min-height: 46px; flex: 0 0 auto; font-size: 12px; }
+        /* 🌟 パワーゲージは横長のまま画面下部に配置（縦持ち時と同じ見た目） */
+        body.compact-mode #bottomBar { display: block; width: 100%; max-width: 900px; margin: 4px auto 0; flex-shrink: 0; }
+        body.compact-mode #powerGaugeWrapper { width: 100%; height: 26px; }
+        body.compact-mode #powerBar { height: 100%; width: var(--pct, 0%); background: linear-gradient(90deg, #ff9100, #ff3d00); }
+        body.compact-mode #powerMarker { top: 0; left: var(--pct, 0%); width: 4px; height: 100%; }
+        body.compact-mode #powerText { writing-mode: initial; top: 0; left: 10px; line-height: 26px; }
     </style>
 </head>
 <body>
@@ -141,6 +137,7 @@
     <canvas id="gameCanvas" width="1200" height="600" tabindex="1"></canvas>
     <div id="rightControls"></div>
     </div>
+    <div id="bottomBar"></div>
 
     <div id="battleUiContainer">
         <div id="weaponPanel">
@@ -174,7 +171,6 @@
     </div>
 
     <!-- 🌟 コンパクトモード時のみ使う十字パッドの受け皿(通常時は空・非表示) -->
-    <div id="dpadCross"></div>
 
     <button id="compactToggleBtn" onclick="toggleCompactManually()" title="画面構成を切り替え">⇄ 表示切替</button>
 
@@ -313,6 +309,47 @@
             return Math.max(-6, Math.min(6, current + delta));
         }
 
+        // 🌟 CPU AI用：与えられた角度・パワーで実際に弾を撃った場合の着弾点をシミュレーションする
+        // (実際のBullet.updateと同じ重力・風の式を使うことで、地形や風を考慮した予測ができる)
+        function simulateTrajectory(sx, sy, angle, power, windPower, maxSteps = 500) {
+            let vx = Math.cos(angle) * power * 1.30, vy = Math.sin(angle) * power * 1.30;
+            let x = sx, y = sy;
+            for (let i = 0; i < maxSteps; i++) {
+                vx += windPower * 0.15 * 0.05; vy += 0.25;
+                x += vx; y += vy;
+                if (isGround(x, y) || y > canvas.height || x < 0 || x >= canvas.width) return { x, y };
+            }
+            return { x, y };
+        }
+
+        // 🌟 指定した目標に最も近い着弾となる角度・パワーの組を探索する（粗い全探索→周辺を少し絞り込み）
+        function cpuFindBestShot(sx, sy, targetX, targetY, facingDir, windPower) {
+            let angleMin = facingDir === 1 ? -1.5 : Math.PI - 1.5;
+            let angleMax = facingDir === 1 ? 1.5 : Math.PI + 1.5;
+            let best = { angle: (angleMin + angleMax) / 2, power: 7, dist: Infinity };
+            for (let power = 3; power <= 12; power += 1) {
+                for (let a = angleMin; a <= angleMax; a += 0.08) {
+                    let land = simulateTrajectory(sx, sy, a, power, windPower);
+                    let d = Math.hypot(land.x - targetX, land.y - targetY);
+                    if (d < best.dist) best = { angle: a, power, dist: d };
+                }
+            }
+            // 最良候補の周辺だけ少し細かく再探索して精度を上げる
+            for (let power = Math.max(2, best.power - 1); power <= Math.min(12, best.power + 1); power += 0.34) {
+                for (let a = best.angle - 0.08; a <= best.angle + 0.08; a += 0.02) {
+                    let land = simulateTrajectory(sx, sy, a, power, windPower);
+                    let d = Math.hypot(land.x - targetX, land.y - targetY);
+                    if (d < best.dist) best = { angle: a, power, dist: d };
+                }
+            }
+            return best;
+        }
+
+        // 🌟 自分の足元付近に地面が無い(崖際)かどうかを判定する。落下死しそうかどうかのCPU判断に使う
+        function isNearLedge(x, y, checkDist = 45) {
+            return !isGround(x - checkDist, y + 20) || !isGround(x + checkDist, y + 20);
+        }
+
         function checkLineOfSight(startX, startY, endX, endY) {
             let steps = Math.ceil(Math.max(Math.abs(endX - startX), Math.abs(endY - startY)));
             for (let i = 0; i <= steps; i += 4) {
@@ -355,10 +392,20 @@
                 let teamOpts = ""; Teams.forEach(t => { teamOpts += `<option value="${t}" ${p.team === t ? 'selected' : ''} class="team-${t}">${t} チーム</option>`; });
                 let teamSelectorHTML = selectedRuleMode === 'team' ? `<select onchange="finalPlayersSetup[${idx}].team = this.value" class="team-${p.team}">${teamOpts}</select>` : `<div style="font-size:11px; color:#888; margin-top:8px;">⚔️ 個人戦</div>`;
 
+                // 🌟 CPUの強さ選択（デフォルト：普通）。UIは今後変わる予定のため、ひとまずプルダウンで実装
+                if (!p.difficulty) p.difficulty = 'normal';
+                let difficultyHTML = "";
+                if (p.type === 'CPU') {
+                    const diffOpts = [["weak","弱い"],["normal","普通"],["strong","強い"],["expert","達人"]]
+                        .map(([v,label]) => `<option value="${v}" ${p.difficulty === v ? 'selected' : ''}>${label}</option>`).join("");
+                    difficultyHTML = `<select onchange="finalPlayersSetup[${idx}].difficulty = this.value" style="margin-top:4px; width:100%;">${diffOpts}</select>`;
+                }
+
                 card.innerHTML = `
                     <div style="font-size:11px;font-weight:bold;color:#0ff;">${p.type === 'HUMAN' ? `👤 ${p.id}P (Player)` : `🤖 ${p.id}P (CPU)`}</div>
                     <div class="avatar-placeholder" id="avatar-${idx}">✨</div>
                     <select onchange="updateCardColor(${idx}, this.value)">${charOpts}</select>
+                    ${difficultyHTML}
                     ${teamSelectorHTML}
                 `;
                 container.appendChild(card); updateCardColor(idx, p.charKey);
@@ -796,18 +843,26 @@
 
                 if (this.type === 5 && this.owner.charKey === "PG-08") {
                     if (hitTank) { this.explode(this.x, this.y); return; }
-                    if (hitTerrain) {
-                        this.bounceCount++;
+                    if (hitTerrain || this.isCurling) {
+                        this.isCurling = true;
                         let surfaceY = findSurfaceY(this.x, this.y);
-                        if (this.bounceCount >= 6) { this.explode(this.x, surfaceY); } 
-                        else {
-                            this.y = surfaceY - 4;
-                            // 局所的な傾斜を左右2点の地表Yの差から求める（terrain[tx±2]の代替）
-                            let slope = 0;
-                            if (tx > 2 && tx < canvas.width - 2) {
-                                slope = (findSurfaceY(tx + 2, surfaceY) - findSurfaceY(tx - 2, surfaceY)) * 0.1;
-                            }
-                            this.vy = -Math.abs(this.vy) * 0.80; this.vx = (this.vx - slope * 1.5) * 0.85; 
+                        this.y = surfaceY - 4; this.vy = 0;
+
+                        // 局所的な傾斜（左右2点の地表Yの差）で下り坂なら加速、上り坂なら減速する
+                        let tx2 = Math.floor(this.x); let slope = 0;
+                        if (tx2 > 2 && tx2 < canvas.width - 2) {
+                            slope = findSurfaceY(tx2 + 2, surfaceY) - findSurfaceY(tx2 - 2, surfaceY);
+                        }
+                        this.vx += slope * 0.03; // 🥌 斜面なりに加減速(下り=slope>0で加速方向)
+                        this.vx *= 0.988; // 🥌 カーリングのようにほぼ減衰せず転がり続ける(摩擦はごくわずか)
+
+                        // 通過した地形を薄く連続で削る(毎フレームだと重いので間引き)
+                        this.curlTick = (this.curlTick || 0) + 1;
+                        if (this.curlTick % 4 === 0) damageTerrain(this.x, surfaceY, 10, 4, null, this.owner);
+
+                        this.curlDistance = (this.curlDistance || 0) + Math.abs(this.vx);
+                        if (Math.abs(this.vx) < 0.4 || this.curlDistance > 900 || this.curlTick > 500) {
+                            this.explode(this.x, surfaceY);
                         }
                         return;
                     }
@@ -1092,17 +1147,58 @@
                 if (this.isCpu) {
                     if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
                         let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && (selectedRuleMode === 'solo' || t.team !== this.team) && t.hasSpawned);
-                        if (!target) target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned); 
-                        if (target) { 
-                            let baseAng = Math.atan2((target.y-12)-(this.y-12), target.x-this.x);
+                        if (!target) target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
+                        let difficulty = this.cpuDifficulty || 'normal';
+
+                        if (target) {
+                            // 向きの決定（既存ロジックを維持）
                             if (target.x < this.x && this.facingDir === 1) {
                                 if (this.gas >= 10) { this.gas -= 10; this.facingDir = -1; this.angle = -Math.PI - this.angle; }
                             } else if (target.x > this.x && this.facingDir === -1) {
                                 if (this.gas >= 10) { this.gas -= 10; this.facingDir = 1; this.angle = -Math.PI - this.angle; }
                             }
-                            this.angle = baseAng + (Math.random()*0.1-0.05);
+
+                            // 🌟 強い/達人：自分が崖際にいて危険な場合、ワープ弾(wp4)を優先して自衛する
+                            let usedEscape = false;
+                            if ((difficulty === 'strong' || difficulty === 'expert') && isNearLedge(this.x, this.y) && this.ammo["wp4"] > 0) {
+                                selWpType = 4; usedEscape = true;
+                                this.angle = this.facingDir === 1 ? -1.0 : Math.PI + 1.0; // 高めに撃って安全な場所を狙う簡易対応
+                                this.chargePower = 8;
+                            }
+
+                            if (!usedEscape) {
+                                // 🌟 難易度ごとの武器選択
+                                let wpChoice = 0;
+                                if (difficulty === 'weak') {
+                                    wpChoice = 0; // 通常弾のみ
+                                } else if (difficulty === 'normal') {
+                                    // 特殊弾(wp1-4)もそこそこ使う。固有弾は使わない
+                                    let usable = [0, 0, 1, 2, 3, 4].filter(w => w === 0 || this.ammo["wp" + w] > 0);
+                                    wpChoice = usable[Math.floor(Math.random() * usable.length)];
+                                } else {
+                                    // 強い/達人：固有弾も含めて幅広く使う
+                                    let usable = [0, 1, 2, 3, 4, 5, 5].filter(w => w === 0 || this.ammo["wp" + w] > 0);
+                                    wpChoice = usable[Math.floor(Math.random() * usable.length)];
+                                }
+                                if (wpChoice === 5 && this.charKey === "CA-01") wpChoice = 0; // ネコの固有弾はコンボ運用前提のためCPUでは使わない
+                                selWpType = wpChoice;
+
+                                if (difficulty === 'weak') {
+                                    // 🌟 弱い：弾道計算をせず、なんとなく相手の方向へ。ブレも大きい
+                                    let baseAng = Math.atan2((target.y - 22) - (this.y - 12), target.x - this.x);
+                                    this.angle = baseAng + (Math.random() * 0.7 - 0.35);
+                                    this.chargePower = 4 + Math.random() * 6;
+                                } else {
+                                    // 🌟 普通以上：実弾道シミュレーションで狙う。難易度に応じて命中精度(ブレ幅)を変える
+                                    let best = cpuFindBestShot(this.x, this.y - 12, target.x, target.y - 22, this.facingDir, window.G.windPower);
+                                    let jitter = difficulty === 'normal' ? 0.12 : (difficulty === 'strong' ? 0.05 : 0.012);
+                                    let powerJitter = difficulty === 'normal' ? 1.2 : (difficulty === 'strong' ? 0.5 : 0.1);
+                                    this.angle = best.angle + (Math.random() * jitter * 2 - jitter);
+                                    this.chargePower = Math.max(2, Math.min(12, best.power + (Math.random() * powerJitter * 2 - powerJitter)));
+                                }
+                            }
                         }
-                        this.isCharging = true; this.chargePower = 4 + Math.random()*6;
+                        this.isCharging = true;
                     } else if (this.isCharging) { this.isCharging = false; window.G.isShooting = true; this.fire(this.chargePower); }
                     return;
                 }
@@ -1234,6 +1330,7 @@
                     let randX = 150 + Math.random() * (canvas.width - 300);
                     let pName = cfg.type === 'HUMAN' ? `${cfg.id}P:${CharacterData[cfg.charKey].name}` : `🤖:${CharacterData[cfg.charKey].name}`;
                     let t = new Tank(0, cfg.charKey, pName, `P${cfg.id}`, cfg.type === 'CPU', cfg.team, cfg.id);
+                    t.cpuDifficulty = cfg.difficulty || 'normal'; // 🌟 CPUの強さ(weak/normal/strong/expert)
                     this.tanks.push(t); introPlanes.push(new IntroPlane(randX, t));
                 });
                 this.turnIdx = 0; this.isShooting = false; this.turnTimer = 30; this.windPower = 0;
@@ -1433,17 +1530,19 @@
             if (!uiOriginalPositions) captureOriginalPositions();
             const leftControls = document.getElementById('leftControls');
             const rightControls = document.getElementById('rightControls');
-            const dpadCross = document.getElementById('dpadCross');
+            const bottomBar = document.getElementById('bottomBar');
 
             if (isCompact) {
+                // 🌟 左：武器パネル＋左右移動
                 leftControls.appendChild(document.getElementById('weaponPanel'));
-                leftControls.appendChild(dpadCross);
-                dpadCross.appendChild(document.getElementById('btnUp'));
-                dpadCross.appendChild(document.getElementById('btnLeft'));
-                dpadCross.appendChild(document.getElementById('btnRight'));
-                dpadCross.appendChild(document.getElementById('btnDown'));
-                rightControls.appendChild(document.getElementById('powerGaugeWrapper'));
+                leftControls.appendChild(document.getElementById('btnLeft'));
+                leftControls.appendChild(document.getElementById('btnRight'));
+                // 🌟 右：砲高/砲低(上)＋発射ボタン(下)
+                rightControls.appendChild(document.getElementById('btnUp'));
+                rightControls.appendChild(document.getElementById('btnDown'));
                 rightControls.appendChild(document.getElementById('padFire'));
+                // 🌟 下：横長パワーゲージ
+                bottomBar.appendChild(document.getElementById('powerGaugeWrapper'));
             } else {
                 uiOriginalPositions.forEach(({ el, parent, nextSibling }) => {
                     if (nextSibling && nextSibling.parentNode === parent) parent.insertBefore(el, nextSibling);
