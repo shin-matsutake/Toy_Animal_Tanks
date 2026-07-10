@@ -62,11 +62,13 @@
         /* 🌟 スマホ横画面対策：ボタンで手動切替、または画面が横長&低いときは自動で切り替わる。
            左(武器+左右移動)・中央(canvas)・右(砲高/砲低+発射)・下(横長パワーゲージ)にJSでDOM要素ごと移動する */
         #battleLayout { display: block; }
-        #leftControls, #rightControls, #bottomBar, #moveRow { display: none; }
+        #leftControls, #rightControls, #bottomBar, #moveRow, #compactMessageBar { display: none; }
         #compactToggleBtn { position: fixed; top: 6px; right: 6px; z-index: 90; background: #444; color: #fff; border: 2px solid #777; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.85; }
         body.compact-mode #debugLog { display: none; }
         body.compact-mode #battleUiContainer { display: none; }
-        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: stretch; justify-content: center; gap: 6px; max-width: 100%; margin: 0 auto; height: 88vh; min-height: 0; }
+        body.compact-mode #battleOuter { display: flex; flex-direction: column; height: 88vh; min-height: 0; }
+        body.compact-mode #compactMessageBar { display: block; flex-shrink: 0; background: rgba(0,20,0,0.85); border: 2px solid #0f0; border-radius: 6px; color: #0f0; font-weight: bold; font-size: 15px; text-align: center; padding: 5px 8px; margin-bottom: 4px; min-height: 20px; }
+        body.compact-mode #battleLayout { display: flex; flex-direction: row; align-items: stretch; justify-content: center; gap: 6px; max-width: 100%; margin: 0 auto; flex: 1; min-height: 0; height: auto; }
         body.compact-mode #leftControls { display: flex; flex-direction: column; justify-content: flex-start; gap: 5px; width: 130px; flex-shrink: 0; background: #333; padding: 5px; border-radius: 8px; overflow: hidden; }
         body.compact-mode #rightControls { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-end; gap: 6px; width: 90px; flex-shrink: 0; background: #333; padding: 6px; border-radius: 8px; }
         /* 🌟 canvasは画面に収まるサイズへJSで実寸を計算して当てる(fitCompactCanvas)。ここは中央寄せの土台のみ */
@@ -137,10 +139,13 @@
         </div>
     </div>
 
+    <div id="battleOuter">
+    <div id="compactMessageBar"></div>
     <div id="battleLayout">
     <div id="leftControls"></div>
     <canvas id="gameCanvas" width="1200" height="600" tabindex="1"></canvas>
     <div id="rightControls"></div>
+    </div>
     </div>
     <div id="bottomBar"></div>
     <div id="moveRow"></div>
@@ -388,6 +393,8 @@
             gameMessageText = msg;
             let log = document.getElementById("debugLog");
             if (log) log.innerText = msg;
+            let compactBar = document.getElementById("compactMessageBar");
+            if (compactBar) compactBar.innerText = msg;
         }
 
         function checkLineOfSight(startX, startY, endX, endY) {
@@ -848,7 +855,7 @@
                 });
 
                 if (this.type === 5 && this.owner.charKey === "XX-10") {
-                    if (hitTank) { this.explode(this.x, this.y); }
+                    if (hitTank) { this.explode(this.x, this.y, hitTank); }
                     return; 
                 }
 
@@ -925,11 +932,11 @@
                 }
 
                 if (hitTank || hitTerrain || hitTree) { 
-                    this.explode(this.x, this.y); 
+                    this.explode(this.x, this.y, hitTank); 
                 }
             }
 
-            explode(cx, cy) {
+            explode(cx, cy, directHitTank = null) {
                 this.isDead = true;
 
                 if (this.isFrogSubBullet) { 
@@ -956,8 +963,8 @@
                     return;
                 }
                 if (char === "RA-02") { 
-                    let totalDmg = damageTerrain(cx, cy, 39, 26, null, this.owner);
-                    if (totalDmg > 0) { this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + Math.floor(totalDmg * 0.5)); } 
+                    let totalDmg = damageTerrain(cx, cy, 39, 24, null, this.owner);
+                    if (totalDmg > 0) { this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + totalDmg); } 
                     else { this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + 5); }
                     return;
                 }
@@ -987,11 +994,15 @@
                 
                 if (char === "ML-06") { 
                     cx = Math.floor(cx);
+                    // 🌟 仕様通り：直撃時のみ35ダメージ。爆風(周囲を巻き込むダメージ)は無し
+                    if (directHitTank && directHitTank.hp > 0) {
+                        directHitTank.hp = Math.max(0, directHitTank.hp - 35);
+                    }
                     if (cx >= 0 && cx < canvas.width) {
                         for (let x = Math.max(0, cx - 25); x < Math.min(canvas.width, cx + 25); x++) {
-                            let depth = Math.sqrt(Math.max(0, 25 * 25 - (x - cx) * (x - cx))) * 2.5; 
+                            // 🌟 ドリルのイメージ：半円形(丸みのある穴)ではなく、中心が最も深いV字(直線的な傾斜)に変更
+                            let depth = (25 - Math.abs(x - cx)) * 2.5;
                             let oldSurfaceY = findSurfaceY(x, cy);
-                            // 🌟 修正：元コードは "- depth"(盛る方向)だったが、本来は掘り下げる仕様のため "+ depth" に訂正
                             reshapeColumn(x, cy, Math.min(canvas.height - 10, oldSurfaceY + depth));
                         }
                     }
@@ -1201,7 +1212,15 @@
 
                 if (this.isCpu) {
                     if (!window.G.isShooting && bullets.length === 0) {
-                        if (!this.cpuTurnState) this.cpuTurnState = 'deciding';
+                        if (!this.cpuTurnState) { this.cpuTurnState = 'deciding'; this.cpuWatchdog = 0; }
+
+                        // 🌟 監視タイマー：理由を問わず、どの状態で何フレーム経っても一定時間(約10秒)で強制的にパスする
+                        this.cpuWatchdog = (this.cpuWatchdog || 0) + 1;
+                        if (this.cpuWatchdog > 600) {
+                            this.cpuTurnState = null; this.isCharging = false;
+                            window.G.nextTurn();
+                            return;
+                        }
 
                         // 🧭 フェーズ1：ターゲット決定＋動くべきか判断
                         if (this.cpuTurnState === 'deciding') {
@@ -1488,6 +1507,7 @@
 
             nextTurn() {
                 bullets = []; this.isShooting = false; this.frogTracker = null;
+                this.tanks.forEach(t => { t.isCharging = false; }); // 🌟 念のため、チャージ状態の残留を防ぐ
                 let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
                 do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
                 this.startTurn();
@@ -1623,31 +1643,24 @@
                     ctx.fillStyle = "#fff"; ctx.font = "bold 13px monospace"; ctx.textAlign = "center"; ctx.fillText(infoStr, canvas.width/2, 106);
                 }
 
-                // 🌟 コンパクトモード時は外部のdebugLogが非表示になるため、同じメッセージをcanvas上部に描画する
-                if (document.body.classList.contains('compact-mode') && gameMessageText) {
-                    ctx.fillStyle = "rgba(0,20,0,0.75)"; ctx.fillRect(0, 0, canvas.width, 34);
-                    ctx.strokeStyle = "#0f0"; ctx.lineWidth = 2; ctx.strokeRect(1, 1, canvas.width - 2, 32);
-                    ctx.fillStyle = "#0f0"; ctx.font = "bold 16px monospace"; ctx.textAlign = "center";
-                    ctx.fillText(gameMessageText, canvas.width / 2, 23);
-                }
-
                 ctx.restore(); // 🌟 シェイクここまで。以降のスコアボードUIは固定表示
 
                 this.tanks.forEach((t, idx) => {
                     let bx = 12 + (idx * 148); if (bx > canvas.width - 150) return;
-                    ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, 10, 142, 65);
+                    let by = 10;
+                    ctx.save(); ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx, by, 142, 65);
                     let isMyTurn = (idx === this.turnIdx && !this.isGameOver && !this.isIntro && t.hp > 0);
                     let displayName = t.hp > 0 ? (isMyTurn ? `${t.name} ⚡` : t.name) : `💀 ${t.name}`;
                     
                     ctx.fillStyle = (selectedRuleMode === 'team') ? (t.team === "Red"?"#ff4d4d":this.team === "Blue"?"#4d94ff":this.team === "Yellow"?"#ffdd4d":"#4dff4d") : "#fff";
-                    ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(displayName, bx + 71, 27);
+                    ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(displayName, bx + 71, by + 17);
                     
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 35, 124, 10);
-                    if (t.hp > 0) { ctx.fillStyle = t.hp > 40 ? "#0f0" : "#f33"; ctx.fillRect(bx + 8, 35, (t.hp / t.maxHp) * 124, 10); }
-                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, 51, 124, 5);
-                    if (t.hp > 0) { ctx.fillStyle = "#ffaa00"; ctx.fillRect(bx + 8, 51, (t.gas / t.maxGas) * 124, 5); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, by + 25, 124, 10);
+                    if (t.hp > 0) { ctx.fillStyle = t.hp > 40 ? "#0f0" : "#f33"; ctx.fillRect(bx + 8, by + 25, (t.hp / t.maxHp) * 124, 10); }
+                    ctx.fillStyle = "#444"; ctx.fillRect(bx + 8, by + 41, 124, 5);
+                    if (t.hp > 0) { ctx.fillStyle = "#ffaa00"; ctx.fillRect(bx + 8, by + 41, (t.gas / t.maxGas) * 124, 5); }
                     
-                    if (isMyTurn) { ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 3; ctx.strokeRect(bx - 2, 9, 146, 67); }
+                    if (isMyTurn) { ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 3; ctx.strokeRect(bx - 2, by - 1, 146, 67); }
                     ctx.restore();
                 });
             }
@@ -1695,20 +1708,21 @@
         // 🌟 コンパクトモード時、canvasが画面をはみ出さないようJSで実寸を計算してフィットさせる(GBA持ちのイメージ)
         function fitCompactCanvas() {
             const canvasEl = document.getElementById('gameCanvas');
+            const outer = document.getElementById('battleOuter');
             const layout = document.getElementById('battleLayout');
             if (!document.body.classList.contains('compact-mode')) {
-                canvasEl.style.width = ''; canvasEl.style.height = ''; layout.style.height = '';
+                canvasEl.style.width = ''; canvasEl.style.height = ''; outer.style.height = '';
                 return;
             }
             // 🌟 vh単位はブラウザのアドレスバー等の表示崖とズレて黒帯の原因になるため、実測のwindow高さを使う
             const viewportH = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
             const bottomBarH = document.getElementById('bottomBar').offsetHeight;
-            const layoutH = Math.max(120, viewportH - bottomBarH - 10);
-            layout.style.height = `${layoutH}px`;
+            const outerH = Math.max(120, viewportH - bottomBarH - 10);
+            outer.style.height = `${outerH}px`;
 
             const leftControls = document.getElementById('leftControls');
             const rightControls = document.getElementById('rightControls');
-            const availH = layoutH;
+            const availH = layout.clientHeight; // 🌟 メッセージバー分を除いた、battleLayoutの実際の残り高さ
             const availW = layout.clientWidth - leftControls.offsetWidth - rightControls.offsetWidth - 16;
             let w = Math.max(100, availW), h = w / 2; // 1200x600=2:1のアスペクト比を維持
             if (h > availH) { h = Math.max(50, availH); w = h * 2; }
