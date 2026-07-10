@@ -78,7 +78,7 @@
         /* 🌟 左右移動は横並びの専用行にまとめ、最小高さを保証して潰れないようにする */
         body.compact-mode #moveRow { display: flex; gap: 4px; flex-shrink: 0; }
         body.compact-mode #moveRow .padBtn { flex: 1; min-height: 44px; }
-        body.compact-mode #btnUp, body.compact-mode #btnDown { flex: 1; min-height: 40px; }
+        body.compact-mode #btnUp, body.compact-mode #btnDown { flex: 0 0 auto; height: 42px; font-size: 13px; }
         /* 🌟 発射ボタンは少し小さめに。上下ボタンの下(=右カラムの下側)に配置 */
         body.compact-mode #padFire { min-height: 46px; flex: 0 0 auto; font-size: 12px; }
         /* 🌟 パワーゲージは横長のまま画面下部に配置（縦持ち時と同じ見た目） */
@@ -204,22 +204,27 @@
         const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {}, tree: null };
 
         const MapStages = [
-            { id: "stage1", name: "🌱 Simple meadow", mapImg: "M01.png", bgImg: "B01.png", type: "hill" },
-            { id: "stage2", name: "♨️ Bathhouse mural", mapImg: "M02.png", bgImg: "B02.png", type: "flat" },
-            { id: "stage3", name: "🐜 Ant colony", mapImg: "M03.png", bgImg: "B03.png", type: "canyon" },
-            { id: "stage4", name: "🫖 Tea party", mapImg: "M04.png", bgImg: "B04.png", type: "hill" },
-            { id: "stage5", name: "📚 Book shelf", mapImg: "M05.png", bgImg: "B05.png", type: "flat" },
-            { id: "stage6", name: "📖 Picture diary", mapImg: "M06.png", bgImg: "B06.png", type: "hill" },
-            { id: "stage7", name: "⚓ Port town", mapImg: "M07.png", bgImg: "B07.png", type: "canyon" },
-            { id: "stage8", name: "🗺️ World Map", mapImg: "M08.png", bgImg: "B08.png", type: "flat" },
-            { id: "stage9", name: "🧱 Block Castle", mapImg: "M09.png", bgImg: "B09.png", type: "canyon" },
-            { id: "stage10", name: "🌕 Lunar Surface", mapImg: "M10.png", bgImg: "B10.png", type: "flat" },
-            { id: "stage11", name: "🪐 Planet X", mapImg: "M11.png", bgImg: "B11.png", type: "hill" },
-            { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon" }
+            { id: "stage1", name: "🌱 Simple meadow", mapImg: "M01.png", bgImg: "B01.png", type: "hill", gravity: 1.0 },
+            { id: "stage2", name: "♨️ Bathhouse mural", mapImg: "M02.png", bgImg: "B02.png", type: "flat", gravity: 1.0 },
+            { id: "stage3", name: "🐜 Ant colony", mapImg: "M03.png", bgImg: "B03.png", type: "canyon", gravity: 1.0 },
+            { id: "stage4", name: "🫖 Tea party", mapImg: "M04.png", bgImg: "B04.png", type: "hill", gravity: 1.0 },
+            { id: "stage5", name: "📚 Book shelf", mapImg: "M05.png", bgImg: "B05.png", type: "flat", gravity: 1.0 },
+            { id: "stage6", name: "📖 Picture diary", mapImg: "M06.png", bgImg: "B06.png", type: "hill", gravity: 1.0 },
+            { id: "stage7", name: "⚓ Port town", mapImg: "M07.png", bgImg: "B07.png", type: "canyon", gravity: 1.0 },
+            { id: "stage8", name: "🗺️ World Map", mapImg: "M08.png", bgImg: "B08.png", type: "flat", gravity: 1.0 },
+            { id: "stage9", name: "🧱 Block Castle", mapImg: "M09.png", bgImg: "B09.png", type: "canyon", gravity: 1.0 },
+            // 🌟 宇宙系ステージは重力を軽くする想定。ただし他ステージと差が開きすぎるとバランス調整が難しくなるため、
+            // 極端な重い/軽いを作らず、宇宙系はすべて近い値(0.7倍程度)に統一する
+            { id: "stage10", name: "🌕 Lunar Surface", mapImg: "M10.png", bgImg: "B10.png", type: "flat", gravity: 0.7 },
+            { id: "stage11", name: "🪐 Planet X", mapImg: "M11.png", bgImg: "B11.png", type: "hill", gravity: 0.7 },
+            { id: "stage12", name: "🌌 Eighth Galaxy", mapImg: "M12.png", bgImg: "B12.png", type: "canyon", gravity: 0.65 },
+            // 🌟 13・14番：画像(M13/B13, M14/B14)到着待ちの仮エントリ。ひとまず宇宙系シリーズの続きとして重力0.7に設定(後で変更可)
+            { id: "stage13", name: "❓ New Stage 13 (準備中)", mapImg: "M13.png", bgImg: "B13.png", type: "hill", gravity: 0.7 },
+            { id: "stage14", name: "❓ New Stage 14 (準備中)", mapImg: "M14.png", bgImg: "B14.png", type: "canyon", gravity: 0.7 }
         ];
 
         // アイテム出現上限は「絵柄の系統(type)」に紐付け（従来のhill/canyon/flatの調整値を維持）
-        const MapConfigs = { "hill": { maxItems: 3 }, "canyon": { maxItems: 2 }, "flat": { maxItems: 4 } };
+        const MapConfigs = { "hill": { maxItems: 3, dropRate: 0.25 }, "canyon": { maxItems: 2, dropRate: 0.20 }, "flat": { maxItems: 4, dropRate: 0.30 } };
 
         // 🌟 総画像枚数を読み込み開始「前」に確定（デグレ防止：カウンタのズレを起こさない）
         let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2) + 1;
@@ -320,8 +325,9 @@
         function simulateTrajectory(sx, sy, angle, power, windPower, maxSteps = 500) {
             let vx = Math.cos(angle) * power * 1.30, vy = Math.sin(angle) * power * 1.30;
             let x = sx, y = sy;
+            let gravity = 0.25 * (selectedStageObj.gravity || 1.0); // 🌟 ステージ重力を考慮しないとCPUの照準がズレる
             for (let i = 0; i < maxSteps; i++) {
-                vx += windPower * 0.15 * 0.05; vy += 0.25;
+                vx += windPower * 0.15 * 0.05; vy += gravity;
                 x += vx; y += vy;
                 if (isGround(x, y) || y > canvas.height || x < 0 || x >= canvas.width) return { x, y };
             }
@@ -354,6 +360,34 @@
         // 🌟 自分の足元付近に地面が無い(崖際)かどうかを判定する。落下死しそうかどうかのCPU判断に使う
         function isNearLedge(x, y, checkDist = 45) {
             return !isGround(x - checkDist, y + 20) || !isGround(x + checkDist, y + 20);
+        }
+
+        // 🌟 CPU AI用：周囲を探索し、今より明確に高い(=有利な)場所があればそのX座標を返す。無ければnull。
+        // 高所は「狙われにくく、落下しにくい」という方針(難易度が高いほど積極的に高所を狙う)
+        function cpuFindBetterGround(tank, difficulty) {
+            let range = (difficulty === 'normal') ? 130 : 230;
+            let step = 22;
+            let moveChance = (difficulty === 'normal') ? 0.5 : 0.85;
+            if (Math.random() > moveChance) return null;
+
+            let bestX = null, bestY = findSurfaceY(tank.x, tank.y);
+            for (let dx = -range; dx <= range; dx += step) {
+                if (dx === 0) continue;
+                let cx = tank.x + dx;
+                if (cx < 30 || cx > canvas.width - 30) continue;
+                let cy = findSurfaceY(cx, tank.y);
+                if (cy > canvas.height) continue; // 奈落は除外
+                if (isNearLedge(cx, cy - 2, 30)) continue; // 崖際すぎる場所は避ける
+                if (cy < bestY - 20) { bestY = cy; bestX = cx; } // 20px以上高い場所だけを候補にする
+            }
+            return bestX;
+        }
+
+        let gameMessageText = ""; // 🌟 現在のメッセージ(コンパクトモードではcanvas内に描画するため保持)
+        function setGameMessage(msg) {
+            gameMessageText = msg;
+            let log = document.getElementById("debugLog");
+            if (log) log.innerText = msg;
         }
 
         function checkLineOfSight(startX, startY, endX, endY) {
@@ -439,6 +473,13 @@
         // （M0x.pngの空中足場・オーバーハング・空洞をそのまま当たり判定に反映するため）
         let terrainMap = []; let bullets = []; let particles = []; let introPlanes = []; let supplyItems = [];
         let visualEffects = []; let treeObjects = []; let screenShakeIntensity = 0;
+        let iceZones = []; // 🧊 ペンギン固有弾が残す氷結ゾーン: {x, y, r}
+
+        // 🧊 指定座標が氷結ゾーン内かどうかを判定
+        function isInIceZone(x, y) {
+            for (let z of iceZones) { if (Math.hypot(z.x - x, z.y - y) < z.r) return true; }
+            return false;
+        }
 
         // 地形の見た目＋当たり判定の実体。M0x.pngをそのまま描画し、削れば穴が開く／盛れば復元する。
         const mapCanvas = document.createElement("canvas");
@@ -495,6 +536,7 @@
         function buildTerrainFromLoadedImage(img) {
             terrainMap = Array.from({ length: canvas.width }, () => new Uint8Array(canvas.height).fill(0));
             currentStageImg = img;
+            iceZones = []; // 🧊 対戦開始時に氷結ゾーンをリセット
             mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
             try {
                 if (!img || !img.complete || img.width === 0) throw new Error("image not ready");
@@ -592,6 +634,11 @@
                 let midX = (line.x0 + line.x1) / 2, midY = (line.y0 + line.y1) / 2;
                 let distToTree = Math.hypot(midX - cx, midY - cy);
                 if (distToTree < (radius + 25)) { setTrunkGround(tree, 0); treeObjects.splice(i, 1); }
+            }
+
+            // 🧊 爆風が地形を削った範囲に氷結ゾーンがあれば一緒に消す(地形が変わったので氷も崩れる)
+            for (let i = iceZones.length - 1; i >= 0; i--) {
+                if (Math.hypot(iceZones[i].x - cx, iceZones[i].y - cy) < (radius + iceZones[i].r)) iceZones.splice(i, 1);
             }
 
             // ビットマップ上に円形の穴を開ける＋見た目（mapCanvas）も同時にくり抜く
@@ -766,6 +813,7 @@
                 if (this.type === 5 && this.owner.charKey === "PG-08") { this.gravity = 0.25; this.radius = 7; }
                 if (this.type === 5 && this.owner.charKey === "XX-10") { this.radius = 8; }
                 if (this.type === 5 && this.owner.charKey === "GK-13") { this.radius = 7; }
+                this.gravity *= (selectedStageObj.gravity || 1.0); // 🌟 ステージ固有の重力係数を反映（月面は軽く、惑星Xは重く等）
             }
 
             update(windPower) {
@@ -848,7 +896,8 @@
                 }
 
                 if (this.type === 5 && this.owner.charKey === "PG-08") {
-                    if (hitTank) { this.explode(this.x, this.y); return; }
+                    // 🧊 直撃：ダメージではなく相手のガソリンを全て奪う
+                    if (hitTank) { hitTank.gas = 0; this.isDead = true; return; }
                     if (hitTerrain || this.isCurling) {
                         this.isCurling = true;
                         let surfaceY = findSurfaceY(this.x, this.y);
@@ -862,13 +911,13 @@
                         this.vx += slope * 0.03; // 🥌 斜面なりに加減速(下り=slope>0で加速方向)
                         this.vx *= 0.988; // 🥌 カーリングのようにほぼ減衰せず転がり続ける(摩擦はごくわずか)
 
-                        // 通過した地形を薄く連続で削る(毎フレームだと重いので間引き)
+                        // 🧊 地形は削らず、通過した軌跡に氷結ゾーンを残す(間引きながら)
                         this.curlTick = (this.curlTick || 0) + 1;
-                        if (this.curlTick % 4 === 0) damageTerrain(this.x, surfaceY, 10, 4, null, this.owner);
+                        if (this.curlTick % 5 === 0) iceZones.push({ x: this.x, y: surfaceY, r: 16 });
 
                         this.curlDistance = (this.curlDistance || 0) + Math.abs(this.vx);
                         if (Math.abs(this.vx) < 0.4 || this.curlDistance > 900 || this.curlTick > 500) {
-                            this.explode(this.x, surfaceY);
+                            this.isDead = true; // 🌟 explode()を経由しない(旧仕様の大爆発を完全に回避)
                         }
                         return;
                     }
@@ -881,7 +930,7 @@
             }
 
             explode(cx, cy) {
-                this.isDead = true; let log = document.getElementById("debugLog");
+                this.isDead = true;
 
                 if (this.isFrogSubBullet) { 
                     damageTerrain(cx, cy, 20, 20, window.G?.frogTracker, this.owner); 
@@ -893,7 +942,7 @@
                 if (this.type === 3) { damageTerrain(cx, cy, 59, 46, null, this.owner); return; }
                 if (this.type === 4) { 
                     this.owner.x = cx; this.owner.y = cy; this.owner.checkGroundStatus();
-                    log.innerText = `🌀 ワープ弾着弾！自身をテレポートさせました。`; return;
+                    setGameMessage(`🌀 ワープ弾着弾！自身をテレポートさせました。`); return;
                 }
 
                 let char = this.owner.charKey;
@@ -902,7 +951,7 @@
                     damageTerrain(cx, cy, 33, 29, null, this.owner);
                     if (this.owner.nekoCombo) {
                         window.G.isShooting = false;
-                        log.innerText = `🐾【ネコ】固有技発動！2発目の通常弾をチャージして発射してください！`;
+                        setGameMessage(`🐾【ネコ】固有技発動！2発目の通常弾をチャージして発射してください！`);
                     } else { window.G.isShooting = false; window.G.nextTurn(); }
                     return;
                 }
@@ -919,7 +968,7 @@
                     this.owner.x = cx; this.owner.y = deepY; this.owner.checkGroundStatus(); return;
                 }
                 if (char === "XX-10") { damageTerrain(cx, cy, 39, 46, null, this.owner); return; }
-                if (char === "PG-08") { damageTerrain(cx, cy, 59, 52, null, this.owner); return; }
+                if (char === "PG-08") { return; } // 🧊 氷結ゾーン方式に移行済み。explode()経由では何もしない(念のための保険)
                 
                 if (char === "CR-07") { 
                     visualEffects.push(new RingEffect(cx, cy, 163, "rgba(120, 0, 255, 0.7)", "pull")); 
@@ -1101,7 +1150,7 @@
                 } else { this.y += 4; }
                 
                 if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) {
-                    if (this.hp > 0) { this.hp = 0; document.getElementById("debugLog").innerText = `💀【落下死】${this.name} がリングアウトしました。`; }
+                    if (this.hp > 0) { this.hp = 0; setGameMessage(`💀【落下死】${this.name} がリングアウトしました。`); }
                 }
             }
 
@@ -1121,7 +1170,7 @@
 
             update(myTurn) {
                 if (!this.hasSpawned) return;
-                if (this.isDropping) { this.vy += 0.25; this.y += this.vy; this.updatePosition(false); return; }
+                if (this.isDropping) { this.vy += 0.25 * (selectedStageObj.gravity || 1.0); this.y += this.vy; this.updatePosition(false); return; }
                 this.updatePosition(false); if (this.hp <= 0) return;
 
                 // 🎁 アイテムの回収判定を1.5倍に拡張（22 → 32）。重力更新はGame.update()側でフレームに1回だけ行う
@@ -1151,61 +1200,124 @@
                 }
 
                 if (this.isCpu) {
-                    if (!window.G.isShooting && !this.isCharging && bullets.length === 0) {
-                        let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && (selectedRuleMode === 'solo' || t.team !== this.team) && t.hasSpawned);
-                        if (!target) target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
-                        let difficulty = this.cpuDifficulty || 'normal';
+                    if (!window.G.isShooting && bullets.length === 0) {
+                        if (!this.cpuTurnState) this.cpuTurnState = 'deciding';
 
-                        if (target) {
-                            // 向きの決定（既存ロジックを維持）
+                        // 🧭 フェーズ1：ターゲット決定＋動くべきか判断
+                        if (this.cpuTurnState === 'deciding') {
+                            let target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && (selectedRuleMode === 'solo' || t.team !== this.team) && t.hasSpawned);
+                            if (!target) target = window.G.tanks.find(t => t.hp > 0 && t.id !== this.id && t.hasSpawned);
+                            this.cpuTarget = target;
+                            let difficulty = this.cpuDifficulty || 'normal';
+                            this.cpuDifficultyCached = difficulty;
+
+                            let moveTargetX = (difficulty === 'weak') ? null : cpuFindBetterGround(this, difficulty);
+                            if (moveTargetX !== null && Math.abs(moveTargetX - this.x) > 15) {
+                                this.cpuMoveTargetX = moveTargetX; this.cpuTurnState = 'moving';
+                            } else {
+                                this.cpuTurnState = 'aim_decide';
+                            }
+                            return;
+                        }
+
+                        // 🚶 フェーズ2：高台へ向けて実際に移動する（人間の移動と同じ速度・ガソリン消費）
+                        if (this.cpuTurnState === 'moving') {
+                            let dx = this.cpuMoveTargetX - this.x;
+                            if (Math.abs(dx) < 6 || this.gas < 0.5) { this.cpuTurnState = 'aim_decide'; return; }
+                            let dir = dx > 0 ? 1 : -1;
+                            let turnCost = 20 - this.climbLimit;
+                            if (dir === 1 && this.facingDir === -1) {
+                                if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { this.cpuTurnState = 'aim_decide'; }
+                                return;
+                            }
+                            if (dir === -1 && this.facingDir === 1) {
+                                if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = -1; this.angle = -Math.PI - this.angle; } else { this.cpuTurnState = 'aim_decide'; }
+                                return;
+                            }
+                            if (this.gas >= 0.4) {
+                                this.gas -= 0.4;
+                                if (isInIceZone(this.x, this.y)) this.hp = Math.max(0, this.hp - 0.2);
+                                let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
+                            } else { this.cpuTurnState = 'aim_decide'; }
+                            return;
+                        }
+
+                        // 🎯 フェーズ3：狙いを決定する（既存の照準ロジック。角度・パワーは目標値として保存するだけ）
+                        if (this.cpuTurnState === 'aim_decide') {
+                            let target = this.cpuTarget; let difficulty = this.cpuDifficultyCached;
+                            if (!target) { this.cpuTargetAngle = this.angle; this.cpuTargetPower = 4; this.cpuPauseTimer = 20; this.cpuTurnState = 'rotating'; return; }
+
+                            let turnCost = 20 - this.climbLimit;
                             if (target.x < this.x && this.facingDir === 1) {
-                                if (this.gas >= 10) { this.gas -= 10; this.facingDir = -1; this.angle = -Math.PI - this.angle; }
+                                if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = -1; this.angle = -Math.PI - this.angle; }
                             } else if (target.x > this.x && this.facingDir === -1) {
-                                if (this.gas >= 10) { this.gas -= 10; this.facingDir = 1; this.angle = -Math.PI - this.angle; }
+                                if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; }
                             }
 
-                            // 🌟 強い/達人：自分が崖際にいて危険な場合、ワープ弾(wp4)を優先して自衛する
                             let usedEscape = false;
                             if ((difficulty === 'strong' || difficulty === 'expert') && isNearLedge(this.x, this.y) && this.ammo["wp4"] > 0) {
                                 selWpType = 4; usedEscape = true;
-                                this.angle = this.facingDir === 1 ? -1.0 : Math.PI + 1.0; // 高めに撃って安全な場所を狙う簡易対応
-                                this.chargePower = 8;
+                                this.cpuTargetAngle = this.facingDir === 1 ? -1.0 : Math.PI + 1.0;
+                                this.cpuTargetPower = 8;
                             }
 
                             if (!usedEscape) {
-                                // 🌟 難易度ごとの武器選択
                                 let wpChoice = 0;
                                 if (difficulty === 'weak') {
-                                    wpChoice = 0; // 通常弾のみ
+                                    wpChoice = 0;
                                 } else if (difficulty === 'normal') {
-                                    // 特殊弾(wp1-4)もそこそこ使う。固有弾は使わない
                                     let usable = [0, 0, 1, 2, 3, 4].filter(w => w === 0 || this.ammo["wp" + w] > 0);
                                     wpChoice = usable[Math.floor(Math.random() * usable.length)];
                                 } else {
-                                    // 強い/達人：固有弾も含めて幅広く使う
                                     let usable = [0, 1, 2, 3, 4, 5, 5].filter(w => w === 0 || this.ammo["wp" + w] > 0);
                                     wpChoice = usable[Math.floor(Math.random() * usable.length)];
                                 }
-                                if (wpChoice === 5 && this.charKey === "CA-01") wpChoice = 0; // ネコの固有弾はコンボ運用前提のためCPUでは使わない
+                                if (wpChoice === 5 && this.charKey === "CA-01") wpChoice = 0;
                                 selWpType = wpChoice;
 
                                 if (difficulty === 'weak') {
-                                    // 🌟 弱い：弾道計算をせず、なんとなく相手の方向へ。ブレも大きい
                                     let baseAng = Math.atan2((target.y - 22) - (this.y - 12), target.x - this.x);
-                                    this.angle = baseAng + (Math.random() * 0.7 - 0.35);
-                                    this.chargePower = 4 + Math.random() * 6;
+                                    this.cpuTargetAngle = baseAng + (Math.random() * 0.7 - 0.35);
+                                    this.cpuTargetPower = 4 + Math.random() * 6;
                                 } else {
-                                    // 🌟 普通以上：実弾道シミュレーションで狙う。難易度に応じて命中精度(ブレ幅)を変える
                                     let best = cpuFindBestShot(this.x, this.y - 12, target.x, target.y - 22, this.facingDir, window.G.windPower);
                                     let jitter = difficulty === 'normal' ? 0.12 : (difficulty === 'strong' ? 0.05 : 0.012);
                                     let powerJitter = difficulty === 'normal' ? 1.2 : (difficulty === 'strong' ? 0.5 : 0.1);
-                                    this.angle = best.angle + (Math.random() * jitter * 2 - jitter);
-                                    this.chargePower = Math.max(2, Math.min(12, best.power + (Math.random() * powerJitter * 2 - powerJitter)));
+                                    this.cpuTargetAngle = best.angle + (Math.random() * jitter * 2 - jitter);
+                                    this.cpuTargetPower = Math.max(2, Math.min(12, best.power + (Math.random() * powerJitter * 2 - powerJitter)));
                                 }
                             }
+                            this.cpuPauseTimer = 25 + Math.random() * 20; // 🌟 狙いを定めてから撃つまでの「間」(約0.4〜0.7秒)
+                            this.cpuTurnState = 'rotating';
+                            return;
                         }
-                        this.isCharging = true;
-                    } else if (this.isCharging) { this.isCharging = false; window.G.isShooting = true; this.fire(this.chargePower); }
+
+                        // 🔄 フェーズ4：目標角度・パワーへなめらかに近づける（瞬間移動させない）
+                        if (this.cpuTurnState === 'rotating') {
+                            let diff = this.cpuTargetAngle - this.angle;
+                            while (diff > Math.PI) diff -= Math.PI * 2;
+                            while (diff < -Math.PI) diff += Math.PI * 2;
+                            this.angle += diff * 0.15;
+                            this.chargePower += (this.cpuTargetPower - this.chargePower) * 0.15;
+                            this.isCharging = true; // パワーバー表示用
+                            if (Math.abs(diff) < 0.02 && Math.abs(this.cpuTargetPower - this.chargePower) < 0.3) {
+                                this.angle = this.cpuTargetAngle; this.chargePower = this.cpuTargetPower;
+                                this.cpuTurnState = 'pausing';
+                            }
+                            return;
+                        }
+
+                        // ⏸️ フェーズ5：狙いを定めた状態でひと呼吸置いてから発射
+                        if (this.cpuTurnState === 'pausing') {
+                            this.cpuPauseTimer--;
+                            if (this.cpuPauseTimer <= 0) {
+                                this.isCharging = false; window.G.isShooting = true;
+                                this.fire(this.chargePower);
+                                this.cpuTurnState = null; // 次のターンのためリセット
+                            }
+                            return;
+                        }
+                    }
                     return;
                 }
 
@@ -1240,6 +1352,8 @@
                 if (!this.isCharging) {
                     if (this.gas >= 0.4 && (moveLeft || moveRight)) {
                         let dir = moveLeft ? -1 : 1; this.gas -= 0.4;
+                        // 🧊 氷結ゾーンを移動中はガソリンに加えてHPも消耗する(ガソリン消費の半分)
+                        if (isInIceZone(this.x, this.y)) { this.hp = Math.max(0, this.hp - 0.2); }
                         let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
                     }
                     if (this.gas >= 0.2 && (angleUp || angleDown)) {
@@ -1353,16 +1467,18 @@
             startTurn() {
                 if (this.isIntro || this.isGameOver) return;
                 let currentTank = this.tanks[this.turnIdx]; currentTank.nekoCombo = false;
+                currentTank.cpuTurnState = null; // 🌟 CPUの思考フェーズをターンごとにリセット
                 currentTank.gas = Math.min(currentTank.maxGas, currentTank.gas + 30);
                 this.turnTimer = 30; this.isShooting = false;
                 // 🌟 風は毎ターン「前の値からの差分変化」。仕様：50%変化なし／35%±1／11%±2／4%突風(±k~6)、最大±6でクランプ
                 this.windPower = updateWindPower(this.windPower);
                 this.updatePowerMarker(currentTank);
-                document.getElementById("debugLog").innerText = `🎮 ${currentTank.name} のターン！`;
+                setGameMessage(`🎮 ${currentTank.name} のターン！`);
                 selWpType = 0; this.upWpBtn();
                 
                 let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
-                if (Math.random() < 0.25 && supplyItems.length < currentLimit) {
+                let dropRate = MapConfigs[selectedStageObj.type]?.dropRate ?? 0.25;
+                if (Math.random() < dropRate && supplyItems.length < currentLimit) {
                     let randX = 100 + Math.random() * (canvas.width - 200); let r = Math.random() * 100;
                     let type = "apple";
                     if (r < 35) type = "apple"; else if (r < 50) type = "medkit"; else if (r < 75) type = "gas"; else if (r < 90) type = "apple"; else type = "bomb";
@@ -1382,7 +1498,7 @@
             selWp(type) {
                 let currentTank = this.tanks[this.turnIdx];
                 if (currentTank.nekoCombo && type !== 0) return;
-                if (type !== 0 && currentTank.ammo["wp" + type] <= 0) { document.getElementById("debugLog").innerText = `⚠️ 弾切れです！`; return; }
+                if (type !== 0 && currentTank.ammo["wp" + type] <= 0) { setGameMessage(`⚠️ 弾切れです！`); return; }
                 selWpType = type; this.upWpBtn(); canvas.focus();
             }
 
@@ -1403,7 +1519,7 @@
 
             checkGameOver() {
                 let alive = this.tanks.filter(t => t.hp > 0); this.isGameOver = true;
-                document.getElementById("debugLog").innerText = alive.length > 0 ? `🏆 【${alive[0].name}】 の大勝利！！！` : `💀 引き分けです。`;
+                setGameMessage(alive.length > 0 ? `🏆 【${alive[0].name}】 の大勝利！！！` : `💀 引き分けです。`);
                 document.getElementById("returnMenuBtn").style.display = "block";
             }
 
@@ -1434,7 +1550,7 @@
                     if (itx >= 0 && itx < canvas.width) {
                         let itemSurfaceY = findSurfaceY(itx, item.y);
                         if (item.y < itemSurfaceY) {
-                            item.vy += 0.25; item.y += item.vy;
+                            item.vy += 0.25 * (selectedStageObj.gravity || 1.0); item.y += item.vy;
                             if (item.y > itemSurfaceY) { item.y = itemSurfaceY; item.vy = 0; }
                         } else { item.vy = 0; }
                     }
@@ -1469,6 +1585,14 @@
                 // 🌟 地形(M0x.png)はmapCanvasに描画済み。damageTerrain/reshapeColumnで穴あけ・復元が反映される
                 ctx.drawImage(mapCanvas, 0, 0);
 
+                // 🧊 氷結ゾーンを地形の上に半透明の水色で重ね描き
+                iceZones.forEach(z => {
+                    ctx.save(); ctx.globalAlpha = 0.45; ctx.fillStyle = "#aeeeff";
+                    ctx.beginPath(); ctx.arc(z.x, z.y - 2, z.r, 0, Math.PI * 2); ctx.fill();
+                    ctx.globalAlpha = 0.8; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1;
+                    ctx.stroke(); ctx.restore();
+                });
+
                 treeObjects.forEach(tree => {
                     ctx.save(); ctx.translate(tree.x, tree.y); ctx.rotate(tree.angle);
                     let imgTree = ImageAssets.tree;
@@ -1497,6 +1621,14 @@
                     if (currentTank && currentTank.charKey === "CA-01" && currentTank.nekoCombo) { infoStr = `🐾 ネコ連続行動中！(残り通常弾 1発)  |  ${windStr}`; }
                     ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(canvas.width/2 - 150, 85, 300, 35);
                     ctx.fillStyle = "#fff"; ctx.font = "bold 13px monospace"; ctx.textAlign = "center"; ctx.fillText(infoStr, canvas.width/2, 106);
+                }
+
+                // 🌟 コンパクトモード時は外部のdebugLogが非表示になるため、同じメッセージをcanvas上部に描画する
+                if (document.body.classList.contains('compact-mode') && gameMessageText) {
+                    ctx.fillStyle = "rgba(0,20,0,0.75)"; ctx.fillRect(0, 0, canvas.width, 34);
+                    ctx.strokeStyle = "#0f0"; ctx.lineWidth = 2; ctx.strokeRect(1, 1, canvas.width - 2, 32);
+                    ctx.fillStyle = "#0f0"; ctx.font = "bold 16px monospace"; ctx.textAlign = "center";
+                    ctx.fillText(gameMessageText, canvas.width / 2, 23);
                 }
 
                 ctx.restore(); // 🌟 シェイクここまで。以降のスコアボードUIは固定表示
