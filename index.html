@@ -32,6 +32,52 @@
         
         .nav-btn { width: 100%; background: #28a745; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 15px; }
         .nav-btn.prev { background: #6c757d; }
+
+        /* 🎨 キャラクター選択画面 */
+        #charSelectLayout { display: flex; gap: 12px; margin-bottom: 16px; }
+        #charDetailPanel { flex: 0 0 240px; background: #1a1a26; border: 2px solid #555575; border-radius: 12px; padding: 14px; text-align: left; }
+        #charDetailImgWrap { width: 100%; height: 130px; background: #222232; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 8px 0; }
+        #charDetailImgWrap img { max-width: 100%; max-height: 100%; }
+        #charDetailName { font-size: 19px; font-weight: bold; color: #ffaa00; }
+        .stat-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 13px; }
+        .stat-label { color: #aaa; }
+        .stat-stars { color: #ffdd00; letter-spacing: 1px; }
+        #charDetailUlt { margin-top: 10px; border-top: 1px solid #444; padding-top: 8px; }
+        #charDetailUltName { font-weight: bold; color: #0ff; margin-bottom: 4px; font-size: 13px; }
+        #charDetailUltDesc { font-size: 11px; color: #ccc; white-space: pre-line; line-height: 1.5; }
+
+        #charGrid { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-content: start; }
+        .char-cell { background: #222232; border: 2px solid #555575; border-radius: 8px; padding: 4px; text-align: center; cursor: pointer; user-select: none; touch-action: none; position: relative; }
+        .char-cell.selected { border-color: #0ff; box-shadow: 0 0 8px rgba(0,255,255,0.6); }
+        .char-cell img { width: 100%; height: 55px; object-fit: contain; pointer-events: none; }
+        .char-cell .char-cell-label { font-size: 10px; color: #ccc; margin-top: 2px; pointer-events: none; }
+
+        #assignSlots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+        @media (max-width: 800px) { #assignSlots { grid-template-columns: repeat(2, 1fr); } }
+        .assign-slot { background: #222232; border: 2px dashed #555575; border-radius: 10px; padding: 8px; min-height: 100px; text-align: center; }
+        .assign-slot.inactive { opacity: 0.25; pointer-events: none; }
+        .assign-slot.drag-over { border-color: #0f0; background: #1a3a1a; }
+        .assign-slot .player-type-label { font-size: 10px; color: #0ff; font-weight: bold; }
+        .assign-slot input.player-name-input { width: 100%; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 12px; text-align: center; margin-bottom: 4px; padding: 2px; box-sizing: border-box; }
+        .assign-slot .assign-img { width: 42px; height: 42px; object-fit: contain; margin: 2px auto; display: block; pointer-events: none; }
+        .assign-slot .assign-char-label { font-size: 11px; color: #fff; pointer-events: none; }
+        .assign-slot .team-swatch { width: 20px; height: 20px; border-radius: 50%; margin: 4px auto; cursor: pointer; border: 2px solid #fff; }
+        .assign-slot .cpu-diff-row { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; margin-top: 2px; }
+        .assign-slot .cpu-diff-row button { background: #444; color: #fff; border: 1px solid #666; border-radius: 4px; width: 20px; height: 20px; cursor: pointer; }
+
+        .char-drag-ghost { position: fixed; pointer-events: none; z-index: 999; width: 50px; height: 50px; opacity: 0.85; transform: translate(-50%, -50%); }
+
+        /* 🗺️ ステージ選択画面 */
+        #stageSelectLayout { display: flex; gap: 12px; margin-bottom: 16px; }
+        #stageDetailPanel { flex: 0 0 240px; background: #1a1a26; border: 2px solid #555575; border-radius: 12px; padding: 14px; text-align: left; }
+        #stageDetailImgWrap { width: 100%; height: 130px; background: #222232; border-radius: 8px; overflow: hidden; }
+        #stageDetailImgWrap img { width: 100%; height: 100%; object-fit: cover; }
+        #stageDetailName { font-size: 17px; font-weight: bold; color: #ffaa00; margin: 8px 0 4px; }
+        #stageDetailDesc { font-size: 11px; color: #ccc; white-space: pre-line; line-height: 1.5; }
+        #stageGrid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-content: start; }
+        .stage-cell { background: #222232; border: 2px solid #555575; border-radius: 8px; overflow: hidden; cursor: pointer; height: 68px; position: relative; }
+        .stage-cell.selected { border-color: #0ff; box-shadow: 0 0 8px rgba(0,255,255,0.6); }
+        .stage-cell img { width: 100%; height: 100%; object-fit: cover; }
         .team-Red { color: #ff4d4d; } .team-Blue { color: #4d94ff; } .team-Yellow { color: #ffdd4d; } .team-Green { color: #4dff4d; }
         
         #battleUiContainer { max-width: 1200px; margin: 5px auto; background: #333; padding: 10px; border-radius: 8px; box-sizing: border-box; }
@@ -84,7 +130,7 @@
         /* 🌟 発射ボタンは少し小さめに。上下ボタンの下(=右カラムの下側)に配置 */
         body.compact-mode #padFire { min-height: 46px; flex: 0 0 auto; font-size: 12px; }
         /* 🌟 パワーゲージは横長のまま画面下部に配置（縦持ち時と同じ見た目） */
-        body.compact-mode #bottomBar { display: block; width: 100%; max-width: 900px; margin: 4px auto 0; flex-shrink: 0; }
+        body.compact-mode #bottomBar { display: block; margin: 4px auto 0; flex-shrink: 0; }
         body.compact-mode #powerGaugeWrapper { width: 100%; height: 26px; }
         body.compact-mode #powerBar { height: 100%; width: var(--pct, 0%); background: linear-gradient(90deg, #ff9100, #ff3d00); }
         body.compact-mode #powerMarker { top: 0; left: var(--pct, 0%); width: 4px; height: 100%; }
@@ -114,26 +160,47 @@
                 <button class="nav-btn" onclick="goToStep(2)">次へ進む ➡️</button>
             </div>
             <div id="stepPanel2" class="step-panel">
-                <div class="section-title">⚔️ STEP 2: 試合形式ルール ＆ ステージ</div>
+                <div class="section-title">⚔️ 試合形式</div>
                 <div class="flex-row">
                     <div class="select-btn selected" id="ruleSolo" onclick="selectRule('solo')">💥 個人戦</div>
                     <div class="select-btn" id="ruleTeam" onclick="selectRule('team')">🤝 チーム戦</div>
                 </div>
-                <div class="section-title">🗺️ ステージ選択（全12ステージ）</div>
-                <div class="flex-row">
-                    <select id="selectStageId" style="width: 100%; background: #3a3a52; color: #fff; border: 2px solid #555575; padding: 12px; font-size: 16px; border-radius: 10px;" onchange="selectMap(this.value)"></select>
+                <div class="section-title">🎨 タンク選択</div>
+                <div id="charSelectLayout">
+                    <div id="charDetailPanel">
+                        <div id="charDetailName">名前</div>
+                        <div id="charDetailImgWrap"><img id="charDetailImg" src="" alt=""></div>
+                        <div id="charDetailStats">
+                            <div class="stat-row"><span class="stat-label">耐久力</span><span id="charDetailHp" class="stat-stars"></span></div>
+                            <div class="stat-row"><span class="stat-label">機動力</span><span id="charDetailMove" class="stat-stars"></span></div>
+                        </div>
+                        <div id="charDetailUlt">
+                            <div id="charDetailUltName">固有弾：</div>
+                            <div id="charDetailUltDesc"></div>
+                        </div>
+                    </div>
+                    <div id="charGrid"></div>
                 </div>
-                <div class="flex-row" style="margin-top:20px;">
+                <div class="section-title">👥 選択済みプレイヤー（キャラを選んでから枠をタップ、またはドラッグ＆ドロップで割り当て）</div>
+                <div id="assignSlots"></div>
+                <div class="flex-row">
                     <button class="nav-btn prev" onclick="goToStep(1)">⬅️ 戻る</button>
                     <button class="nav-btn" onclick="goToStep(3)">次へ進む ➡️</button>
                 </div>
             </div>
             <div id="stepPanel3" class="step-panel">
-                <div class="section-title">🎨 STEP 3: キャラクター＆チームエントリー</div>
-                <div class="entry-list" id="entryList"></div>
+                <div class="section-title">🗺️ ステージ選択</div>
+                <div id="stageSelectLayout">
+                    <div id="stageDetailPanel">
+                        <div id="stageDetailImgWrap"><img id="stageDetailImg" src="" alt=""></div>
+                        <div id="stageDetailName">ステージ名</div>
+                        <div id="stageDetailDesc">テキスト編集中</div>
+                    </div>
+                    <div id="stageGrid"></div>
+                </div>
                 <div class="flex-row">
                     <button class="nav-btn prev" onclick="goToStep(2)">⬅️ 戻る</button>
-                    <button class="nav-btn" style="background:#28a745;" onclick="startGame()">⚔️ 大乱闘スタート ⚔️</button>
+                    <button class="nav-btn" style="background:#28a745;" onclick="startGame()">⚔️ 戦闘開始 ⚔️</button>
                 </div>
             </div>
         </div>
@@ -187,20 +254,62 @@
 
     <script>
         const CharacterData = {
-            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 10, color: "#3388ff", numCode: "01" },
-            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 10, color: "#ff66cc", numCode: "02" },
-            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 6, color: "#8b5a2b", numCode: "03" }, 
-            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 10, color: "#ff9933", numCode: "04" },
-            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 14, color: "#aaaaaa", numCode: "05" },
-            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 10, color: "#4e3629", numCode: "06" },
-            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 14, color: "#111111", numCode: "07" },
-            "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#00ccff", numCode: "08" },
-            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 10, color: "#c2b280", numCode: "09" },
-            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 10, color: "#ffffff", numCode: "10" },
-            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 12, color: "#4dff4d", numCode: "11" },
-            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 6, color: "#228b22", numCode: "12" },  
-            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 8, color: "#a0522d", numCode: "13" },
-            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 10, color: "#708090", numCode: "14" }
+            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 10, color: "#3388ff", numCode: "01",
+                heroName: "ブレイブ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
+                ultName: "おかわりマタタビ弾",
+                ultDesc: "通常弾よりもほんの少し弱い弾を撃った後、もう一回行動ができる！\n風を読むための試し打ちに使ったり、移動のために壁や床に穴をあけたり\n2連撃でとどめを刺したり、シンプルだけど汎用性の高い攻撃ができるぞ！" },
+            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 10, color: "#ff66cc", numCode: "02",
+                heroName: "ルーナ", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
+                ultName: "モグモグにんじん弾",
+                ultDesc: "相手に攻撃を当てるとその分HPを回復\n確実に狙って一気に優位に立とう\nもし外れてしまっても、ほんの少しだけ回復するぞ" },
+            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 6, color: "#8b5a2b", numCode: "03",
+                heroName: "メイプル", hpStars: "★★★★★", moveStars: "★☆☆☆☆",
+                ultName: "背水熊掌弾",
+                ultDesc: "自分の耐久値を犠牲に超威力の一撃を発射！\n通常弾より弾が重いので、通常弾と軌道が変わる\nなるべく近づいて最大パワーでぶち当てろ！！" },
+            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 10, color: "#ff9933", numCode: "04",
+                heroName: "ポチッチ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
+                ultName: "犬嗅追尾弾",
+                ultDesc: "着弾直前に敵の臭いを嗅ぎつけて追いかける追尾弾\n威力は低いが高確率で敵に直撃するぞ\n壁や障害物があると攻撃が直撃しないから注意！" },
+            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 14, color: "#aaaaaa", numCode: "05",
+                heroName: "ミック", hpStars: "★☆☆☆☆", moveStars: "★★★★★",
+                ultName: "かじかじもぐちゅ弾",
+                ultDesc: "地面に穴をあけて、そこに素早く潜り込む\n高いところにワープしたり、威力は低いが攻撃もできる\nガソリンをすべて使うから　仕返しには要注意！" },
+            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 10, color: "#4e3629", numCode: "06",
+                heroName: "モグスケ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
+                ultName: "土竜ドリル弾",
+                ultDesc: "一撃で地面に深く穴をあける\n深く潜って弾をよけたり、敵を奈落に落としたり\n使いどころを気長に待って、戦いを有利に進めよう" },
+            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 14, color: "#111111", numCode: "07",
+                heroName: "クロノス", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
+                ultName: "闇夜のブラックホール弾",
+                ultDesc: "着弾点に相手を吸い寄せる\n隠れた相手をおびき出したり、穴に相手を落としたり\n穴や障害物をうまく使って、戦況を変えろ！" },
+            "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#00ccff", numCode: "08",
+                heroName: "キング", hpStars: "★★★★☆", moveStars: "★★☆☆☆",
+                ultName: "よちよちカーリング弾",
+                ultDesc: "地面を這う弾丸は氷のつぶてをまき散らす\n氷結した地面の上を移動すると車体にダメージが入る\n弾が敵に直撃したら、ガソリンを凍らせて使えなくしてしまう" },
+            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 10, color: "#c2b280", numCode: "09",
+                heroName: "ポココン", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
+                ultName: "狸忍カラクリの木弾",
+                ultDesc: "着弾点からカラクリの木を生やす！\n足場にも壁にも使えるぞ！　木から落ちたクリの実は\n自分で食べるとおいしくて、敵が食べると爆破する" },
+            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 10, color: "#ffffff", numCode: "10",
+                heroName: "キュー", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
+                ultName: "ファントムショット弾",
+                ultDesc: "地面や障害物を貫通する高威力の砲撃\n敵に命中しても消えずに飛んでいく\n狙いをすませて確実に当てろ　できれば大勢にまとめて当てろ" },
+            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 12, color: "#4dff4d", numCode: "11",
+                heroName: "ゲロック", hpStars: "★★☆☆☆", moveStars: "★★★☆☆",
+                ultName: "Rain Or Fountain",
+                ultDesc: "着弾してから水の弾を拡散させる\n地面に落ちれば噴水のように広がり\n天井に当てれば雨のように広範囲に攻撃" },
+            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 6, color: "#228b22", numCode: "12",
+                heroName: "クーラー", hpStars: "★★★★☆", moveStars: "★☆☆☆☆",
+                ultName: "Turtle Shell Dome",
+                ultDesc: "着弾点を中心にドームを生成\n自分を守ったり、敵を閉じ込めたり、橋を創ったり\n戦況に応じて使い分けて機動力の低さをカバーしろ" },
+            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 8, color: "#a0522d", numCode: "13",
+                heroName: "ゴルグル", hpStars: "★★★★☆", moveStars: "★★☆☆☆",
+                ultName: "QB Cannon Arm",
+                ultDesc: "ラグビーボールのように不規則にバウンドするショットを放つ\n何度かバウンドするので、多段ヒットで大ダメージを狙え！\nバウンドするたびに威力が落ちるので、1発目を正確に当てろ！" },
+            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 10, color: "#708090", numCode: "14",
+                heroName: "ゾロ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
+                ultName: "Beastly Gust Of Wind",
+                ultDesc: "着弾点にこぶたの家を破壊するほど強い突風を発生させる\nダメージを与えつつ少し遠くに吹き飛ばす\n穴に落としたり罠にハメたり、器用に立ち回り劣勢を吹き飛ばせ！" }
         };
 
         // ============================================================
@@ -232,7 +341,7 @@
         const MapConfigs = { "hill": { maxItems: 3, dropRate: 0.25 }, "canyon": { maxItems: 2, dropRate: 0.20 }, "flat": { maxItems: 4, dropRate: 0.30 } };
 
         // 🌟 総画像枚数を読み込み開始「前」に確定（デグレ防止：カウンタのズレを起こさない）
-        let totalImages = (Object.keys(CharacterData).length * 2) + (MapStages.length * 2) + 1;
+        let totalImages = (Object.keys(CharacterData).length * 3) + (MapStages.length * 2) + 1;
         let loadedImages = 0;
 
         function onImageLoad() {
@@ -254,6 +363,12 @@
             ImageAssets.turrets[key] = new Image();
             ImageAssets.turrets[key].onload = onImageLoad; ImageAssets.turrets[key].onerror = onImageLoad;
             ImageAssets.turrets[key].src = `assets/images/${code}DD.png`;
+
+            // 🌟 キャラ選択画面用の肖像画像
+            if (!ImageAssets.portraits) ImageAssets.portraits = {};
+            ImageAssets.portraits[key] = new Image();
+            ImageAssets.portraits[key].onload = onImageLoad; ImageAssets.portraits[key].onerror = onImageLoad;
+            ImageAssets.portraits[key].src = `assets/images/${code}MM.png`;
         });
 
         MapStages.forEach(st => {
@@ -292,12 +407,6 @@
         function selectMap(stageId) {
             selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0];
         }
-
-        // ステージ選択プルダウンの初期構築
-        (function initStageSelectUI() {
-            const stageSelect = document.getElementById("selectStageId");
-            MapStages.forEach(st => { stageSelect.innerHTML += `<option value="${st.id}">${st.name}</option>`; });
-        })();
 
         function selectRule(r) {
             selectedRuleMode = r;
@@ -411,58 +520,193 @@
         }
 
         function goToStep(step) {
-            if (step === 3) {
+            if (step === 2) {
                 let hCount = parseInt(hSel.value); let cCount = parseInt(cSel.value);
                 if (hCount + cCount < 2) { alert("合計2人以上必要です！"); return; }
                 finalPlayersSetup = [];
                 let idCounter = 1;
                 let charKeys = Object.keys(CharacterData);
                 for(let i=0; i<hCount; i++) {
-                    finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    finalPlayersSetup.push({ id: idCounter, type: 'HUMAN', name: `${idCounter}P`, charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4], difficulty: 'normal' });
                     idCounter++;
                 }
                 for(let i=0; i<cCount; i++) {
-                    finalPlayersSetup.push({ id: idCounter, type: 'CPU', charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4] });
+                    finalPlayersSetup.push({ id: idCounter, type: 'CPU', name: `${idCounter}P`, charKey: charKeys[(idCounter-1)%charKeys.length], team: Teams[(idCounter-1)%4], difficulty: 'normal' });
                     idCounter++;
                 }
-                buildStep3UI();
+                buildCharSelectUI();
             }
+            if (step === 3) { buildStageSelectUI(); }
             document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
             document.getElementById(`stepPanel${step}`).classList.add('active');
         }
 
-        function buildStep3UI() {
-            const container = document.getElementById("entryList"); container.innerHTML = "";
-            finalPlayersSetup.forEach((p, idx) => {
-                const card = document.createElement("div"); card.className = "entry-card";
-                let charOpts = ""; Object.keys(CharacterData).forEach(k => { charOpts += `<option value="${k}" ${p.charKey === k ? 'selected' : ''}>${CharacterData[k].name}</option>`; });
-                let teamOpts = ""; Teams.forEach(t => { teamOpts += `<option value="${t}" ${p.team === t ? 'selected' : ''} class="team-${t}">${t} チーム</option>`; });
-                let teamSelectorHTML = selectedRuleMode === 'team' ? `<select onchange="finalPlayersSetup[${idx}].team = this.value" class="team-${p.team}">${teamOpts}</select>` : `<div style="font-size:11px; color:#888; margin-top:8px;">⚔️ 個人戦</div>`;
+        // ============================================================
+        // 🎨 キャラクター選択画面
+        // ============================================================
+        let selectedCharForAssign = null; // タップで選択中のキャラ(枠をタップすると割り当てられる)
+        const CHAR_KEYS_LIST = Object.keys(CharacterData);
 
-                // 🌟 CPUの強さ選択（デフォルト：普通）。UIは今後変わる予定のため、ひとまずプルダウンで実装
-                if (!p.difficulty) p.difficulty = 'normal';
-                let difficultyHTML = "";
-                if (p.type === 'CPU') {
-                    const diffOpts = [["weak","弱い"],["normal","普通"],["strong","強い"],["expert","達人"]]
-                        .map(([v,label]) => `<option value="${v}" ${p.difficulty === v ? 'selected' : ''}>${label}</option>`).join("");
-                    difficultyHTML = `<select onchange="finalPlayersSetup[${idx}].difficulty = this.value" style="margin-top:4px; width:100%;">${diffOpts}</select>`;
-                }
-
-                card.innerHTML = `
-                    <div style="font-size:11px;font-weight:bold;color:#0ff;">${p.type === 'HUMAN' ? `👤 ${p.id}P (Player)` : `🤖 ${p.id}P (CPU)`}</div>
-                    <div class="avatar-placeholder" id="avatar-${idx}">✨</div>
-                    <select onchange="updateCardColor(${idx}, this.value)">${charOpts}</select>
-                    ${difficultyHTML}
-                    ${teamSelectorHTML}
-                `;
-                container.appendChild(card); updateCardColor(idx, p.charKey);
+        function buildCharSelectUI() {
+            selectedCharForAssign = null;
+            const grid = document.getElementById("charGrid"); grid.innerHTML = "";
+            CHAR_KEYS_LIST.forEach(key => {
+                const cell = document.createElement("div"); cell.className = "char-cell"; cell.dataset.charkey = key;
+                let img = ImageAssets.portraits && ImageAssets.portraits[key];
+                let imgSrc = (img && img.complete && img.width > 0) ? img.src : "";
+                cell.innerHTML = `${imgSrc ? `<img src="${imgSrc}">` : `<div style="height:55px;display:flex;align-items:center;justify-content:center;color:#666;font-size:22px;">🐾</div>`}<div class="char-cell-label">${CharacterData[key].heroName || CharacterData[key].name}</div>`;
+                attachCharCellEvents(cell, key);
+                grid.appendChild(cell);
             });
+            // 15枠目：ランダムセレクト
+            const randomCell = document.createElement("div"); randomCell.className = "char-cell"; randomCell.dataset.charkey = "random";
+            randomCell.innerHTML = `<div style="height:55px;display:flex;align-items:center;justify-content:center;font-size:26px;">🎲</div><div class="char-cell-label">ランダム</div>`;
+            attachCharCellEvents(randomCell, "random");
+            grid.appendChild(randomCell);
+
+            renderCharDetail(CHAR_KEYS_LIST[0]);
+            renderAssignSlots();
         }
 
-        function updateCardColor(idx, key) {
-            finalPlayersSetup[idx].charKey = key;
-            const ph = document.getElementById(`avatar-${idx}`);
-            if(ph) { ph.style.color = CharacterData[key].color; ph.innerText = `🚗 ${CharacterData[key].name} [HP:${CharacterData[key].hp}]`; }
+        function renderCharDetail(key) {
+            if (key === "random" || !key) {
+                document.getElementById("charDetailName").innerText = "🎲 ランダムセレクト";
+                document.getElementById("charDetailImg").src = "";
+                document.getElementById("charDetailHp").innerText = "";
+                document.getElementById("charDetailMove").innerText = "";
+                document.getElementById("charDetailUltName").innerText = "固有弾：？？？";
+                document.getElementById("charDetailUltDesc").innerText = "どのキャラになるかはお楽しみ！";
+                return;
+            }
+            let c = CharacterData[key];
+            document.getElementById("charDetailName").innerText = `${c.heroName || ""}（${c.name}）`;
+            let img = ImageAssets.portraits && ImageAssets.portraits[key];
+            document.getElementById("charDetailImg").src = (img && img.complete && img.width > 0) ? img.src : "";
+            document.getElementById("charDetailHp").innerText = c.hpStars || "";
+            document.getElementById("charDetailMove").innerText = c.moveStars || "";
+            document.getElementById("charDetailUltName").innerText = `固有弾：${c.ultName || ""}`;
+            document.getElementById("charDetailUltDesc").innerText = c.ultDesc || "";
+        }
+
+        function attachCharCellEvents(cell, key) {
+            let dragGhost = null; let startX = 0, startY = 0; let dragging = false; let pointerId = null;
+
+            cell.addEventListener('pointerdown', (e) => {
+                pointerId = e.pointerId; startX = e.clientX; startY = e.clientY; dragging = false;
+                document.querySelectorAll('.char-cell.selected').forEach(c => c.classList.remove('selected'));
+                cell.classList.add('selected'); selectedCharForAssign = key; renderCharDetail(key);
+                e.preventDefault();
+            });
+            cell.addEventListener('pointermove', (e) => {
+                if (e.pointerId !== pointerId || pointerId === null) return;
+                let dx = e.clientX - startX, dy = e.clientY - startY;
+                if (!dragging && Math.hypot(dx, dy) > 10) {
+                    dragging = true;
+                    dragGhost = document.createElement('div'); dragGhost.className = 'char-drag-ghost';
+                    let img = ImageAssets.portraits && ImageAssets.portraits[key];
+                    if (img && img.complete && img.width > 0) { dragGhost.style.backgroundImage = `url(${img.src})`; dragGhost.style.backgroundSize = 'contain'; dragGhost.style.backgroundRepeat = 'no-repeat'; dragGhost.style.backgroundPosition = 'center'; }
+                    else { dragGhost.innerText = "🐾"; dragGhost.style.fontSize = "30px"; }
+                    document.body.appendChild(dragGhost);
+                    cell.setPointerCapture(pointerId);
+                }
+                if (dragging && dragGhost) {
+                    dragGhost.style.left = `${e.clientX}px`; dragGhost.style.top = `${e.clientY}px`;
+                    document.querySelectorAll('.assign-slot').forEach(s => s.classList.remove('drag-over'));
+                    let target = document.elementFromPoint(e.clientX, e.clientY);
+                    let slot = target && target.closest('.assign-slot:not(.inactive)');
+                    if (slot) slot.classList.add('drag-over');
+                }
+            });
+            cell.addEventListener('pointerup', (e) => {
+                if (dragging && dragGhost) {
+                    let target = document.elementFromPoint(e.clientX, e.clientY);
+                    let slot = target && target.closest('.assign-slot:not(.inactive)');
+                    if (slot) assignCharToSlot(key, parseInt(slot.dataset.slotIdx));
+                    dragGhost.remove(); dragGhost = null;
+                    document.querySelectorAll('.assign-slot').forEach(s => s.classList.remove('drag-over'));
+                }
+                dragging = false; pointerId = null;
+            });
+            cell.addEventListener('pointercancel', () => { if (dragGhost) { dragGhost.remove(); dragGhost = null; } dragging = false; pointerId = null; });
+        }
+
+        function assignCharToSlot(key, slotIdx) {
+            if (key === "random") key = CHAR_KEYS_LIST[Math.floor(Math.random() * CHAR_KEYS_LIST.length)];
+            if (!finalPlayersSetup[slotIdx]) return;
+            finalPlayersSetup[slotIdx].charKey = key;
+            renderAssignSlots();
+        }
+
+        function renderAssignSlots() {
+            const container = document.getElementById("assignSlots"); container.innerHTML = "";
+            for (let i = 0; i < 8; i++) {
+                const slot = document.createElement("div");
+                slot.className = "assign-slot" + (i >= finalPlayersSetup.length ? " inactive" : "");
+                slot.dataset.slotIdx = i;
+                if (i < finalPlayersSetup.length) {
+                    const p = finalPlayersSetup[i];
+                    const c = CharacterData[p.charKey];
+                    let img = ImageAssets.portraits && ImageAssets.portraits[p.charKey];
+                    let imgSrc = (img && img.complete && img.width > 0) ? img.src : "";
+                    let nameField = p.type === 'HUMAN'
+                        ? `<input class="player-name-input" value="${p.name}" onchange="finalPlayersSetup[${i}].name = this.value">`
+                        : `<div class="player-name-input" style="cursor:default;">${p.name}</div>`;
+                    let teamHTML = selectedRuleMode === 'team'
+                        ? `<div class="team-swatch" style="background:${teamColor(p.team)}" onclick="cycleTeam(${i})" title="タップでチーム変更"></div>`
+                        : "";
+                    let cpuHTML = p.type === 'CPU'
+                        ? `<div class="cpu-diff-row"><button onclick="cycleDifficulty(${i}, -1)">−</button><span>${difficultyLabel(p.difficulty)}</span><button onclick="cycleDifficulty(${i}, 1)">＋</button></div>`
+                        : "";
+                    slot.innerHTML = `
+                        <div class="player-type-label">${p.type === 'HUMAN' ? '👤 PLAYER' : '🤖 CPU'}</div>
+                        ${nameField}
+                        ${imgSrc ? `<img class="assign-img" src="${imgSrc}">` : `<div class="assign-img" style="display:flex;align-items:center;justify-content:center;">🐾</div>`}
+                        <div class="assign-char-label">${c.heroName || c.name}</div>
+                        ${teamHTML}${cpuHTML}
+                    `;
+                    slot.addEventListener('pointerup', (e) => {
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                        if (selectedCharForAssign) assignCharToSlot(selectedCharForAssign, i);
+                    });
+                } else {
+                    slot.innerHTML = `<div style="color:#666;font-size:12px;padding-top:30px;">－</div>`;
+                }
+                container.appendChild(slot);
+            }
+        }
+
+        function teamColor(team) { return team === "Red" ? "#ff4d4d" : team === "Blue" ? "#4d94ff" : team === "Yellow" ? "#ffdd4d" : "#4dff4d"; }
+        function cycleTeam(idx) { let i = Teams.indexOf(finalPlayersSetup[idx].team); finalPlayersSetup[idx].team = Teams[(i + 1) % Teams.length]; renderAssignSlots(); }
+        function difficultyLabel(d) { return { weak: "弱い", normal: "普通", strong: "強い", expert: "達人" }[d] || "普通"; }
+        function cycleDifficulty(idx, dir) {
+            const order = ['weak', 'normal', 'strong', 'expert'];
+            let i = order.indexOf(finalPlayersSetup[idx].difficulty || 'normal');
+            i = Math.max(0, Math.min(order.length - 1, i + dir));
+            finalPlayersSetup[idx].difficulty = order[i];
+            renderAssignSlots();
+        }
+
+        // ============================================================
+        // 🗺️ ステージ選択画面
+        // ============================================================
+        function buildStageSelectUI() {
+            const grid = document.getElementById("stageGrid"); grid.innerHTML = "";
+            MapStages.forEach(st => {
+                const cell = document.createElement("div"); cell.className = "stage-cell" + (st.id === selectedStageObj.id ? " selected" : "");
+                let img = ImageAssets.stages[st.id];
+                let imgSrc = (img && img.complete && img.width > 0) ? img.src : "";
+                cell.innerHTML = imgSrc ? `<img src="${imgSrc}">` : "";
+                cell.onclick = () => { selectMap(st.id); buildStageSelectUI(); };
+                grid.appendChild(cell);
+            });
+            renderStageDetail(selectedStageObj);
+        }
+
+        function renderStageDetail(st) {
+            let img = ImageAssets.stages[st.id];
+            document.getElementById("stageDetailImg").src = (img && img.complete && img.width > 0) ? img.src : "";
+            document.getElementById("stageDetailName").innerText = st.name;
+            document.getElementById("stageDetailDesc").innerText = "テキスト編集中"; // 🌟 ステージ説明文は準備中のため仮テキスト
         }
 
         function returnToMenu() {
@@ -629,7 +873,7 @@
 
         // 地形を掘る（既存の呼び出しシグネチャ・ダメージ計算ロジックはベース版を完全維持）
         function damageTerrain(cx, cy, radius, maxDmg = 25, subBulletTracker = null, ownerTank = null) {
-            if (radius <= 0) return 0;
+            if (radius < 0) return 0; // 🌟 radius=0は「地形は削らないが直撃ダメージ判定はしたい」ケース(ゴリラ序盤バウンド等)のため通す
             cx = Math.floor(cx); cy = Math.floor(cy);
             if (cx < -radius || cx >= canvas.width + radius) return 0;
             // 🌟 爆発規模に応じた画面シェイク(小さい弾は控えめ、大きい爆風はしっかり揺れる)
@@ -1254,9 +1498,16 @@
                                 return;
                             }
                             if (this.gas >= 0.4) {
+                                let beforeX = this.x;
                                 this.gas -= 0.4;
                                 if (isInIceZone(this.x, this.y)) this.hp = Math.max(0, this.hp - 0.2);
                                 let prevX = this.x; this.x += dir * 2.5; this.updatePosition(true, prevX);
+                                // 🌟 壁や段差でupdatePositionが位置を押し戻した場合、位置がほぼ変化しない。
+                                // これが続く(=詰まっている)場合は移動を諦めて照準フェーズへ進む
+                                if (Math.abs(this.x - beforeX) < 0.1) {
+                                    this.cpuStuckCount = (this.cpuStuckCount || 0) + 1;
+                                    if (this.cpuStuckCount > 5) { this.cpuTurnState = 'aim_decide'; this.cpuStuckCount = 0; return; }
+                                } else { this.cpuStuckCount = 0; }
                             } else { this.cpuTurnState = 'aim_decide'; }
                             return;
                         }
@@ -1295,11 +1546,11 @@
                                 selWpType = wpChoice;
 
                                 if (difficulty === 'weak') {
-                                    let baseAng = Math.atan2((target.y - 22) - (this.y - 12), target.x - this.x);
+                                    let baseAng = Math.atan2((target.y - 22) - (this.y - 13), target.x - this.x);
                                     this.cpuTargetAngle = baseAng + (Math.random() * 0.7 - 0.35);
                                     this.cpuTargetPower = 4 + Math.random() * 6;
                                 } else {
-                                    let best = cpuFindBestShot(this.x, this.y - 12, target.x, target.y - 22, this.facingDir, window.G.windPower);
+                                    let best = cpuFindBestShot(this.x, this.y - 13, target.x, target.y - 22, this.facingDir, window.G.windPower);
                                     let jitter = difficulty === 'normal' ? 0.12 : (difficulty === 'strong' ? 0.05 : 0.012);
                                     let powerJitter = difficulty === 'normal' ? 1.2 : (difficulty === 'strong' ? 0.5 : 0.1);
                                     this.cpuTargetAngle = best.angle + (Math.random() * jitter * 2 - jitter);
@@ -1407,7 +1658,7 @@
                 } else { if (wp !== 0) this.ammo["wp" + wp]--; }
 
                 const bx = this.x + Math.cos(this.angle) * 22;
-                const by = this.y - 12 + Math.sin(this.angle) * 22;
+                const by = this.y - 13 + Math.sin(this.angle) * 22;
                 let vel = power * 1.30; 
 
                 if (wp === 2) { 
@@ -1435,7 +1686,7 @@
                     let turretW = 48, turretH = turretW * (imgTurret.height / imgTurret.width);
 
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, -12); // 🌟 fire()の弾発射ピボット(this.y - 12)と完全に一致させる
+                    ctx.save(); ctx.translate(0, -13); // 🌟 fire()の弾発射ピボット(this.y - 13)と完全に一致させる。頭に隠れないよう少しだけ上げた
                     let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
                     ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -10, -turretH / 2, turretW, turretH); ctx.restore();
                     // 🌟 -tankHで描画(=画像の下端がちょうどy=0のピボットに接する。これ以上下にはみ出さない)
@@ -1508,7 +1759,11 @@
             nextTurn() {
                 bullets = []; this.isShooting = false; this.frogTracker = null;
                 this.tanks.forEach(t => { t.isCharging = false; }); // 🌟 念のため、チャージ状態の残留を防ぐ
-                let alive = this.tanks.filter(t => t.hp > 0); if (alive.length <= 1) { this.checkGameOver(); return; }
+                let alive = this.tanks.filter(t => t.hp > 0);
+                let isFinished = (selectedRuleMode === 'team')
+                    ? new Set(alive.map(t => t.team)).size <= 1 // 🌟 チーム戦：残りチームが1つ以下になったら終了
+                    : alive.length <= 1;                         // 個人戦：残り1人になったら終了
+                if (isFinished) { this.checkGameOver(); return; }
                 do { this.turnIdx = (this.turnIdx + 1) % this.tanks.length; } while (this.tanks[this.turnIdx].hp <= 0);
                 this.startTurn();
             }
@@ -1539,7 +1794,11 @@
 
             checkGameOver() {
                 let alive = this.tanks.filter(t => t.hp > 0); this.isGameOver = true;
-                setGameMessage(alive.length > 0 ? `🏆 【${alive[0].name}】 の大勝利！！！` : `💀 引き分けです。`);
+                let winMsg;
+                if (alive.length === 0) { winMsg = `💀 引き分けです。`; }
+                else if (selectedRuleMode === 'team') { winMsg = `🏆 【${alive[0].team}チーム】 の大勝利！！！`; }
+                else { winMsg = `🏆 【${alive[0].name}】 の大勝利！！！`; }
+                setGameMessage(winMsg);
                 document.getElementById("returnMenuBtn").style.display = "block";
             }
 
@@ -1710,13 +1969,14 @@
             const canvasEl = document.getElementById('gameCanvas');
             const outer = document.getElementById('battleOuter');
             const layout = document.getElementById('battleLayout');
+            const bottomBarEl = document.getElementById('bottomBar');
             if (!document.body.classList.contains('compact-mode')) {
-                canvasEl.style.width = ''; canvasEl.style.height = ''; outer.style.height = '';
+                canvasEl.style.width = ''; canvasEl.style.height = ''; outer.style.height = ''; bottomBarEl.style.width = '';
                 return;
             }
             // 🌟 vh単位はブラウザのアドレスバー等の表示崖とズレて黒帯の原因になるため、実測のwindow高さを使う
             const viewportH = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-            const bottomBarH = document.getElementById('bottomBar').offsetHeight;
+            const bottomBarH = bottomBarEl.offsetHeight;
             const outerH = Math.max(120, viewportH - bottomBarH - 10);
             outer.style.height = `${outerH}px`;
 
@@ -1727,6 +1987,8 @@
             let w = Math.max(100, availW), h = w / 2; // 1200x600=2:1のアスペクト比を維持
             if (h > availH) { h = Math.max(50, availH); w = h * 2; }
             canvasEl.style.width = `${w}px`; canvasEl.style.height = `${h}px`;
+            // 🌟 パワーゲージの幅を画面全体ではなくcanvasの実幅に合わせる(指で隠れる問題の対策)
+            bottomBarEl.style.width = `${w}px`;
         }
 
         function toggleCompactManually() {
