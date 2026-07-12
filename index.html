@@ -12,6 +12,14 @@
         #menuScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(25, 25, 35, 0.98); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 100; overflow-y: auto; padding: 20px 0; box-sizing: border-box; }
         .menu-container { background: #2d2d3d; padding: 25px; border-radius: 16px; border: 4px solid #4e4e6e; max-width: 900px; width: 95%; box-shadow: 0 0 30px rgba(0,0,0,0.8); box-sizing: border-box; }
         h2.title { text-align: center; color: #0ff; margin: 0 0 20px 0; font-size: 24px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+
+        /* 🎬 タイトル画面 */
+        #titleLogoWrap { position: relative; width: 100%; height: 220px; margin-bottom: 16px; }
+        #titleLogoImg { width: 100%; height: 100%; object-fit: contain; }
+        #titleLogoFallback { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: bold; text-align: center; padding: 10px; box-sizing: border-box; background: #1a5f7a; border-radius: 10px; border: 2px solid #0a3f52; }
+        #titleMenuList { display: flex; flex-direction: column; gap: 12px; max-width: 420px; margin: 0 auto; }
+        .title-menu-btn { background: #999; border: 2px solid #333; border-radius: 10px; padding: 16px; font-size: 22px; font-weight: bold; text-align: center; cursor: pointer; }
+        .title-menu-btn:active { transform: translateY(2px); }
         .section-title { color: #ffaa00; border-left: 5px solid #ffaa00; padding-left: 10px; margin: 20px 0 12px 0; text-align: left; font-size: 16px; font-weight: bold; }
         
         .step-panel { display: none; }
@@ -35,14 +43,16 @@
 
         /* 🎨 キャラクター選択画面 */
         #charSelectLayout { display: flex; gap: 12px; margin-bottom: 16px; }
-        #charDetailPanel { flex: 0 0 240px; background: #1a1a26; border: 2px solid #555575; border-radius: 12px; padding: 14px; text-align: left; }
-        #charDetailImgWrap { width: 100%; height: 130px; background: #222232; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 8px 0; }
+        #charDetailPanel { flex: 0 0 210px; background: #1a1a26; border: 2px solid #555575; border-radius: 12px; padding: 12px; text-align: left; }
+        #charDetailTopRow { display: flex; gap: 10px; align-items: flex-start; }
+        #charDetailImgWrap { flex: 0 0 64px; width: 64px; height: 64px; background: #222232; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #charDetailImgWrap img { max-width: 100%; max-height: 100%; }
-        #charDetailName { font-size: 19px; font-weight: bold; color: #ffaa00; }
-        .stat-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 13px; }
+        #charDetailTopInfo { flex: 1; min-width: 0; }
+        #charDetailName { font-size: 15px; font-weight: bold; color: #ffaa00; line-height: 1.3; }
+        .stat-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 12px; }
         .stat-label { color: #aaa; }
         .stat-stars { color: #ffdd00; letter-spacing: 1px; }
-        #charDetailUlt { margin-top: 10px; border-top: 1px solid #444; padding-top: 8px; }
+        #charDetailUlt { margin-top: 8px; border-top: 1px solid #444; padding-top: 6px; }
         #charDetailUltName { font-weight: bold; color: #0ff; margin-bottom: 4px; font-size: 13px; }
         #charDetailUltDesc { font-size: 11px; color: #ccc; white-space: pre-line; line-height: 1.5; }
 
@@ -144,8 +154,19 @@
 
     <div id="menuScreen">
         <div class="menu-container">
-            <h2 class="title">🐾 動物戦車：おもちゃの大乱闘マルチ 🐾</h2>
-            <div id="stepPanel1" class="step-panel active">
+            <div id="stepPanel0" class="step-panel active">
+                <div id="titleLogoWrap">
+                    <img id="titleLogoImg" src="assets/images/title.png" alt="" onerror="this.style.display='none'; document.getElementById('titleLogoFallback').style.display='flex';">
+                    <div id="titleLogoFallback">🐾 動物戦車：おもちゃの大乱闘マルチ 🐾</div>
+                </div>
+                <div id="titleMenuList">
+                    <div class="title-menu-btn" style="color:#ffe14d;" onclick="selectTitleMode('arcade')">アーケード</div>
+                    <div class="title-menu-btn" style="color:#ff5b5b;" onclick="selectTitleMode('solo')">バトルロイヤル</div>
+                    <div class="title-menu-btn" style="color:#5bb8ff;" onclick="selectTitleMode('team')">チームバトル</div>
+                    <div class="title-menu-btn" style="color:#5bdc6a;" onclick="selectTitleMode('options')">オプション</div>
+                </div>
+            </div>
+            <div id="stepPanel1" class="step-panel">
                 <div class="section-title">👥 STEP 1: 参戦プレイヤー数の設定（最大8人）</div>
                 <div class="flex-row">
                     <div class="num-input-group">
@@ -157,22 +178,24 @@
                         <select id="selectCpus" onchange="validateCounts()"></select>
                     </div>
                 </div>
-                <button class="nav-btn" onclick="goToStep(2)">次へ進む ➡️</button>
+                <div class="flex-row">
+                    <button class="nav-btn prev" onclick="goToStep(0)">⬅️ タイトルへ</button>
+                    <button class="nav-btn" onclick="goToStep(2)">次へ進む ➡️</button>
+                </div>
             </div>
             <div id="stepPanel2" class="step-panel">
-                <div class="section-title">⚔️ 試合形式</div>
-                <div class="flex-row">
-                    <div class="select-btn selected" id="ruleSolo" onclick="selectRule('solo')">💥 個人戦</div>
-                    <div class="select-btn" id="ruleTeam" onclick="selectRule('team')">🤝 チーム戦</div>
-                </div>
                 <div class="section-title">🎨 タンク選択</div>
                 <div id="charSelectLayout">
                     <div id="charDetailPanel">
-                        <div id="charDetailName">名前</div>
-                        <div id="charDetailImgWrap"><img id="charDetailImg" src="" alt=""></div>
-                        <div id="charDetailStats">
-                            <div class="stat-row"><span class="stat-label">耐久力</span><span id="charDetailHp" class="stat-stars"></span></div>
-                            <div class="stat-row"><span class="stat-label">機動力</span><span id="charDetailMove" class="stat-stars"></span></div>
+                        <div id="charDetailTopRow">
+                            <div id="charDetailImgWrap"><img id="charDetailImg" src="" alt=""></div>
+                            <div id="charDetailTopInfo">
+                                <div id="charDetailName">名前</div>
+                                <div id="charDetailStats">
+                                    <div class="stat-row"><span class="stat-label">耐久力</span><span id="charDetailHp" class="stat-stars"></span></div>
+                                    <div class="stat-row"><span class="stat-label">機動力</span><span id="charDetailMove" class="stat-stars"></span></div>
+                                </div>
+                            </div>
                         </div>
                         <div id="charDetailUlt">
                             <div id="charDetailUltName">固有弾：</div>
@@ -410,8 +433,14 @@
 
         function selectRule(r) {
             selectedRuleMode = r;
-            document.getElementById('ruleSolo').classList.toggle('selected', r === 'solo');
-            document.getElementById('ruleTeam').classList.toggle('selected', r === 'team');
+        }
+
+        // 🎬 タイトル画面のメニュー選択
+        function selectTitleMode(mode) {
+            if (mode === 'arcade') { alert('🚧 アーケードモードは現在準備中です。今しばらくお待ちください！'); return; }
+            if (mode === 'options') { alert('🔧 オプション画面は準備中です（今後、サウンド音量などの調整を予定しています）。'); return; }
+            selectRule(mode); // 'solo' または 'team'
+            goToStep(1);
         }
 
         let finalPlayersSetup = [];
@@ -1546,11 +1575,11 @@
                                 selWpType = wpChoice;
 
                                 if (difficulty === 'weak') {
-                                    let baseAng = Math.atan2((target.y - 22) - (this.y - 13), target.x - this.x);
+                                    let baseAng = Math.atan2((target.y - 22) - (this.y - 14), target.x - this.x);
                                     this.cpuTargetAngle = baseAng + (Math.random() * 0.7 - 0.35);
                                     this.cpuTargetPower = 4 + Math.random() * 6;
                                 } else {
-                                    let best = cpuFindBestShot(this.x, this.y - 13, target.x, target.y - 22, this.facingDir, window.G.windPower);
+                                    let best = cpuFindBestShot(this.x, this.y - 14, target.x, target.y - 22, this.facingDir, window.G.windPower);
                                     let jitter = difficulty === 'normal' ? 0.12 : (difficulty === 'strong' ? 0.05 : 0.012);
                                     let powerJitter = difficulty === 'normal' ? 1.2 : (difficulty === 'strong' ? 0.5 : 0.1);
                                     this.cpuTargetAngle = best.angle + (Math.random() * jitter * 2 - jitter);
@@ -1658,7 +1687,7 @@
                 } else { if (wp !== 0) this.ammo["wp" + wp]--; }
 
                 const bx = this.x + Math.cos(this.angle) * 22;
-                const by = this.y - 13 + Math.sin(this.angle) * 22;
+                const by = this.y - 14 + Math.sin(this.angle) * 22;
                 let vel = power * 1.30; 
 
                 if (wp === 2) { 
@@ -1686,7 +1715,7 @@
                     let turretW = 48, turretH = turretW * (imgTurret.height / imgTurret.width);
 
                     ctx.save(); if (this.facingDir === 1) ctx.scale(-1, 1);
-                    ctx.save(); ctx.translate(0, -13); // 🌟 fire()の弾発射ピボット(this.y - 13)と完全に一致させる。頭に隠れないよう少しだけ上げた
+                    ctx.save(); ctx.translate(0, -14); // 🌟 fire()の弾発射ピボット(this.y - 14)と完全に一致させる。頭に隠れないようさらに少し上げた
                     let relativeAngle = this.facingDir === 1 ? Math.PI - this.angle : this.angle;
                     ctx.rotate(relativeAngle); ctx.drawImage(imgTurret, -10, -turretH / 2, turretW, turretH); ctx.restore();
                     // 🌟 -tankHで描画(=画像の下端がちょうどy=0のピボットに接する。これ以上下にはみ出さない)
@@ -1699,9 +1728,15 @@
                     ctx.fillStyle = "#333"; ctx.fillRect(-30, -6, 60, 6);
                 }
 
-                ctx.fillStyle = (selectedRuleMode === 'team') ? (this.team === "Red"?"#ff4d4d":this.team === "Blue"?"#4d94ff":this.team === "Yellow"?"#ffdd4d":"#4dff4d") : "#fff";
-                ctx.beginPath(); ctx.arc(0, -64, 4, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -78);
+                if (selectedRuleMode === 'team') {
+                    ctx.fillStyle = this.team === "Red" ? "#ff4d4d" : this.team === "Blue" ? "#4d94ff" : this.team === "Yellow" ? "#ffdd4d" : "#4dff4d";
+                    ctx.beginPath(); ctx.arc(0, -64, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#fff";
+                } else {
+                    // 🌟 個人戦では全員が同じ白丸になり意味を持たないため、丸は出さず名前をキャラ固有色にして見分けやすくする
+                    ctx.fillStyle = this.color;
+                }
+                ctx.font = "10px sans-serif"; ctx.textAlign = "center"; ctx.fillText(this.name, 0, -78);
 
                 if (window.G && window.G.tanks[window.G.turnIdx] === this && !window.G.isIntro && !window.G.isGameOver) {
                     let bobbing = Math.sin(performance.now() * 0.01) * 3; 
