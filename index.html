@@ -20,6 +20,17 @@
         #titleMenuList { display: flex; flex-direction: column; gap: 12px; max-width: 420px; margin: 0 auto; }
         .title-menu-btn { background: #999; border: 2px solid #333; border-radius: 10px; padding: 16px; font-size: 22px; font-weight: bold; text-align: center; cursor: pointer; }
         .title-menu-btn:active { transform: translateY(2px); }
+
+        /* 👥 人数設定画面 */
+        #countSettingLayout { display: flex; flex-direction: column; gap: 16px; max-width: 480px; margin: 0 auto 10px; }
+        .count-row { display: flex; align-items: center; gap: 14px; background: #222232; border: 2px solid #555575; border-radius: 12px; padding: 12px 16px; }
+        .count-icon { font-size: 34px; flex-shrink: 0; }
+        .count-value { font-size: 30px; font-weight: bold; color: #fff; width: 40px; text-align: center; flex-shrink: 0; }
+        .count-btns { display: flex; gap: 6px; flex-shrink: 0; }
+        .count-btn { width: 34px; height: 34px; border-radius: 8px; border: 2px solid #666; background: #444; color: #fff; font-size: 15px; cursor: pointer; }
+        .count-btn.plus { background: #2d7a3a; border-color: #1f5a29; }
+        .count-btn.minus { background: #7a2d2d; border-color: #5a1f1f; }
+        .count-preview { flex: 1; font-size: 18px; letter-spacing: 3px; text-align: right; overflow: hidden; white-space: nowrap; }
         .section-title { color: #ffaa00; border-left: 5px solid #ffaa00; padding-left: 10px; margin: 20px 0 12px 0; text-align: left; font-size: 16px; font-weight: bold; }
         
         .step-panel { display: none; }
@@ -168,14 +179,24 @@
             </div>
             <div id="stepPanel1" class="step-panel">
                 <div class="section-title">👥 STEP 1: 参戦プレイヤー数の設定（最大8人）</div>
-                <div class="flex-row">
-                    <div class="num-input-group">
-                        <label>👤 人間プレイヤー</label>
-                        <select id="selectHumans" onchange="validateCounts()"></select>
+                <div id="countSettingLayout">
+                    <div class="count-row">
+                        <div class="count-icon">👤</div>
+                        <div class="count-value" id="humanCountLabel">1</div>
+                        <div class="count-btns">
+                            <button class="count-btn minus" onclick="changeCount('human', -1)">➖</button>
+                            <button class="count-btn plus" onclick="changeCount('human', 1)">➕</button>
+                        </div>
+                        <div class="count-preview" id="humanPreview"></div>
                     </div>
-                    <div class="num-input-group">
-                        <label>🤖 CPUロボット</label>
-                        <select id="selectCpus" onchange="validateCounts()"></select>
+                    <div class="count-row">
+                        <div class="count-icon">🤖</div>
+                        <div class="count-value" id="cpuCountLabel">3</div>
+                        <div class="count-btns">
+                            <button class="count-btn minus" onclick="changeCount('cpu', -1)">➖</button>
+                            <button class="count-btn plus" onclick="changeCount('cpu', 1)">➕</button>
+                        </div>
+                        <div class="count-preview" id="cpuPreview"></div>
                     </div>
                 </div>
                 <div class="flex-row">
@@ -416,16 +437,26 @@
         let animationFrameId = null;
         let selWpType = 0; 
         
-        const hSel = document.getElementById("selectHumans");
-        const cSel = document.getElementById("selectCpus");
-        for(let i=1; i<=8; i++) hSel.innerHTML += `<option value="${i}" ${i===1?'selected':''}>${i}人</option>`;
-        for(let i=0; i<=7; i++) cSel.innerHTML += `<option value="${i}" ${i===3?'selected':''}>${i}体</option>`;
+        let hCount = 1, cCount = 3; // 🌟 人数設定画面：人間/CPUの人数(絵文字+/-方式)
 
-        function validateCounts() {
-            let h = parseInt(hSel.value); let c = parseInt(cSel.value);
-            if (h + c > 8) { alert("合計人数は最大8人までです。"); cSel.value = 8 - h; }
+        function changeCount(type, delta) {
+            if (type === 'human') hCount = Math.max(0, Math.min(8, hCount + delta));
+            else cCount = Math.max(0, Math.min(8, cCount + delta));
+            // 合計8人を超えないよう、超えた分は相手側を自動で減らす
+            if (hCount + cCount > 8) {
+                if (type === 'human') cCount = Math.max(0, 8 - hCount);
+                else hCount = Math.max(0, 8 - cCount);
+            }
+            renderCountSetting();
         }
-        validateCounts();
+
+        function renderCountSetting() {
+            document.getElementById("humanCountLabel").innerText = hCount;
+            document.getElementById("cpuCountLabel").innerText = cCount;
+            document.getElementById("humanPreview").innerText = "👤".repeat(hCount);
+            document.getElementById("cpuPreview").innerText = "🤖".repeat(cCount);
+        }
+        renderCountSetting();
 
         function selectMap(stageId) {
             selectedStageObj = MapStages.find(st => st.id === stageId) || MapStages[0];
@@ -550,7 +581,6 @@
 
         function goToStep(step) {
             if (step === 2) {
-                let hCount = parseInt(hSel.value); let cCount = parseInt(cSel.value);
                 if (hCount + cCount < 2) { alert("合計2人以上必要です！"); return; }
                 finalPlayersSetup = [];
                 let idCounter = 1;
@@ -1164,8 +1194,19 @@
                         this.bounceCount++;
                         if (this.bounceCount >= 5) { this.isDead = true; } 
                         else {
-                            if (hitTerrain) this.y = findSurfaceY(this.x, this.y) - 4;
-                            let randomAngle = -Math.PI/4 - Math.random() * Math.PI/2; 
+                            // 🌟 修正：findSurfaceYで真上にスキャンして位置を決めると、天井にぶつかった際に
+                            // 地形の反対側(外)へワープするバグがあった。移動方向の逆向きに少し戻すだけにする
+                            let wasFalling = this.vy >= 0; // 天井にぶつかった場合はfalse(上昇中に衝突)
+                            if (hitTerrain) {
+                                let backDist = 4;
+                                let moveLen = Math.hypot(this.vx, this.vy) || 1;
+                                this.x -= (this.vx / moveLen) * backDist;
+                                this.y -= (this.vy / moveLen) * backDist;
+                            }
+                            // 🌟 跳ね返る方向も、床なら上向き・天井なら下向きにする(常に上向き決め打ちだったのを修正)
+                            let randomAngle = wasFalling
+                                ? -Math.PI/4 - Math.random() * Math.PI/2   // 床：上向きに跳ねる
+                                : Math.PI/4 + Math.random() * Math.PI/2;  // 天井：下向きに跳ねる
                             let bounceSpeed = 4 + Math.random() * 5; 
                             this.vx = Math.cos(randomAngle) * bounceSpeed;
                             this.vy = Math.sin(randomAngle) * bounceSpeed;
@@ -1180,20 +1221,26 @@
                     if (hitTank) { hitTank.gas = 0; this.isDead = true; return; }
                     if (hitTerrain || this.isCurling) {
                         this.isCurling = true;
-                        let surfaceY = findSurfaceY(this.x, this.y);
-                        this.y = surfaceY - 4; this.vy = 0;
+                        // 🌟 修正：findSurfaceYで真上にスキャンして位置を決めると、天井にぶつかった際に
+                        // 地形の反対側(外)へワープするバグがあった(ゴリラと同じ原因)。
+                        // 衝突地点(this.y)をそのまま使い、移動方向の逆向きに少し戻すだけにする
+                        let backDist = 4;
+                        let moveLen = Math.hypot(this.vx, this.vy) || 1;
+                        this.x -= (this.vx / moveLen) * backDist;
+                        this.y -= (this.vy / moveLen) * backDist;
+                        this.vy = 0;
 
                         // 局所的な傾斜（左右2点の地表Yの差）で下り坂なら加速、上り坂なら減速する
                         let tx2 = Math.floor(this.x); let slope = 0;
                         if (tx2 > 2 && tx2 < canvas.width - 2) {
-                            slope = findSurfaceY(tx2 + 2, surfaceY) - findSurfaceY(tx2 - 2, surfaceY);
+                            slope = findSurfaceY(tx2 + 2, this.y) - findSurfaceY(tx2 - 2, this.y);
                         }
                         this.vx += slope * 0.03; // 🥌 斜面なりに加減速(下り=slope>0で加速方向)
                         this.vx *= 0.988; // 🥌 カーリングのようにほぼ減衰せず転がり続ける(摩擦はごくわずか)
 
                         // 🧊 地形は削らず、通過した軌跡に氷結ゾーンを残す(間引きながら)
                         this.curlTick = (this.curlTick || 0) + 1;
-                        if (this.curlTick % 5 === 0) iceZones.push({ x: this.x, y: surfaceY, r: 16 });
+                        if (this.curlTick % 5 === 0) iceZones.push({ x: this.x, y: this.y, r: 16 });
 
                         this.curlDistance = (this.curlDistance || 0) + Math.abs(this.vx);
                         if (Math.abs(this.vx) < 0.4 || this.curlDistance > 900 || this.curlTick > 500) {
@@ -1633,13 +1680,18 @@
                     if (this.gas >= turnCost) { this.gas -= turnCost; this.facingDir = 1; this.angle = -Math.PI - this.angle; } else { moveRight = false; }
                 }
 
+                let wasAlreadyCharging = this.isCharging; // 🌟 このフレームの処理が始まる前からチャージ中だったか
+
                 if (firePressed && !window.G.isShooting && bullets.length === 0) {
                     this.isCharging = true; this.chargePower += 0.25 * this.chargeDirection;
                     if (this.chargePower >= 12) { this.chargePower = 12; this.chargeDirection = -1; }
                     if (this.chargePower <= 2) { this.chargePower = 2; this.chargeDirection = 1; }
                 }
                 
-                if (fireReleased && this.isCharging) {
+                // 🌟 修正：押した(firePressed)のと同じフレームで離した(fireReleased)判定が来ると、
+                // チャージが1回も加算されないまま即発射されてしまう不具合があった。
+                // 「前のフレームから既にチャージが継続していた場合」だけ、離す操作で発射できるようにする
+                if (fireReleased && wasAlreadyCharging) {
                     keyInputs.fireReleased = false; padInputs.fireReleased = false; this.isCharging = false;
                     if (window.G.isShooting || bullets.length > 0) return; 
                     window.G.isShooting = true; this.fire(this.chargePower);
