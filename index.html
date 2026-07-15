@@ -78,6 +78,17 @@
         .assign-slot { background: #222232; border: 2px dashed #555575; border-radius: 10px; padding: 8px; min-height: 100px; text-align: center; }
         .assign-slot.inactive { opacity: 0.25; pointer-events: none; }
         .assign-slot.drag-over { border-color: #0f0; background: #1a3a1a; }
+
+        /* 📱 縦長スマホ向け：詳細パネルとグリッドの横並びをやめ、縦積みにして幅を確保する */
+        @media (max-width: 600px) {
+            #charSelectLayout { flex-direction: column; }
+            #charDetailPanel { flex: none; width: 100%; box-sizing: border-box; }
+            #charGrid { grid-template-columns: repeat(4, 1fr); }
+            .char-cell img { height: 42px; }
+        }
+        @media (max-width: 420px) {
+            #charGrid { grid-template-columns: repeat(3, 1fr); }
+        }
         .assign-slot .player-type-label { font-size: 10px; color: #0ff; font-weight: bold; }
         .assign-slot input.player-name-input { width: 100%; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 12px; text-align: center; margin-bottom: 4px; padding: 2px; box-sizing: border-box; }
         .assign-slot .assign-img { width: 42px; height: 42px; object-fit: contain; margin: 2px auto; display: block; pointer-events: none; }
@@ -298,59 +309,59 @@
 
     <script>
         const CharacterData = {
-            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 10, color: "#3388ff", numCode: "01",
+            "CA-01": { name: "ネコ", hp: 100, gas: 100, climb: 10, color: "#D11000", numCode: "01",
                 heroName: "ブレイブ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
                 ultName: "おかわりマタタビ弾",
                 ultDesc: "通常弾よりもほんの少し弱い弾を撃った後、もう一回行動ができる！\n風を読むための試し打ちに使ったり、移動のために壁や床に穴をあけたり\n2連撃でとどめを刺したり、シンプルだけど汎用性の高い攻撃ができるぞ！" },
-            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 10, color: "#ff66cc", numCode: "02",
+            "RA-02": { name: "ウサギ", hp: 95, gas: 110, climb: 10, color: "#F05894", numCode: "02",
                 heroName: "ルーナ", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
                 ultName: "モグモグにんじん弾",
                 ultDesc: "相手に攻撃を当てるとその分HPを回復\n確実に狙って一気に優位に立とう\nもし外れてしまっても、ほんの少しだけ回復するぞ" },
-            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 6, color: "#8b5a2b", numCode: "03",
+            "BR-03": { name: "クマ", hp: 120, gas: 85, climb: 6, color: "#843C00", numCode: "03",
                 heroName: "メイプル", hpStars: "★★★★★", moveStars: "★☆☆☆☆",
                 ultName: "背水熊掌弾",
                 ultDesc: "自分の耐久値を犠牲に超威力の一撃を発射！\n通常弾より弾が重いので、通常弾と軌道が変わる\nなるべく近づいて最大パワーでぶち当てろ！！" },
-            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 10, color: "#ff9933", numCode: "04",
+            "DO-04": { name: "イヌ", hp: 100, gas: 100, climb: 10, color: "#0058BA", numCode: "04",
                 heroName: "ポチッチ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
                 ultName: "犬嗅追尾弾",
                 ultDesc: "着弾直前に敵の臭いを嗅ぎつけて追いかける追尾弾\n威力は低いが高確率で敵に直撃するぞ\n壁や障害物があると攻撃が直撃しないから注意！" },
-            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 14, color: "#aaaaaa", numCode: "05",
+            "RT-05": { name: "ネズミ", hp: 90, gas: 120, climb: 14, color: "#6E6E6E", numCode: "05",
                 heroName: "ミック", hpStars: "★☆☆☆☆", moveStars: "★★★★★",
                 ultName: "かじかじもぐちゅ弾",
                 ultDesc: "地面に穴をあけて、そこに素早く潜り込む\n高いところにワープしたり、威力は低いが攻撃もできる\nガソリンをすべて使うから　仕返しには要注意！" },
-            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 10, color: "#4e3629", numCode: "06",
+            "ML-06": { name: "モグラ", hp: 100, gas: 100, climb: 10, color: "#FDAC02", numCode: "06",
                 heroName: "モグスケ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
                 ultName: "土竜ドリル弾",
                 ultDesc: "一撃で地面に深く穴をあける\n深く潜って弾をよけたり、敵を奈落に落としたり\n使いどころを気長に待って、戦いを有利に進めよう" },
-            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 14, color: "#111111", numCode: "07",
+            "CR-07": { name: "カラス", hp: 90, gas: 120, climb: 14, color: "#033776", numCode: "07",
                 heroName: "クロノス", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
                 ultName: "闇夜のブラックホール弾",
                 ultDesc: "着弾点に相手を吸い寄せる\n隠れた相手をおびき出したり、穴に相手を落としたり\n穴や障害物をうまく使って、戦況を変えろ！" },
-            "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#00ccff", numCode: "08",
+            "PG-08": { name: "ペンギン", hp: 110, gas: 80, climb: 10, color: "#01939F", numCode: "08",
                 heroName: "キング", hpStars: "★★★★☆", moveStars: "★★☆☆☆",
                 ultName: "よちよちカーリング弾",
                 ultDesc: "地面を這う弾丸は氷のつぶてをまき散らす\n氷結した地面の上を移動すると車体にダメージが入る\n弾が敵に直撃したら、ガソリンを凍らせて使えなくしてしまう" },
-            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 10, color: "#c2b280", numCode: "09",
+            "RD-09": { name: "タヌキ", hp: 90, gas: 120, climb: 10, color: "#E03D00", numCode: "09",
                 heroName: "ポココン", hpStars: "★★☆☆☆", moveStars: "★★★★☆",
                 ultName: "狸忍カラクリの木弾",
                 ultDesc: "着弾点からカラクリの木を生やす！\n足場にも壁にも使えるぞ！　木から落ちたクリの実は\n自分で食べるとおいしくて、敵が食べると爆破する" },
-            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 10, color: "#ffffff", numCode: "10",
+            "XX-10": { name: "オバケ", hp: 100, gas: 100, climb: 10, color: "#F5F5F5", numCode: "10",
                 heroName: "キュー", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
                 ultName: "ファントムショット弾",
                 ultDesc: "地面や障害物を貫通する高威力の砲撃\n敵に命中しても消えずに飛んでいく\n狙いをすませて確実に当てろ　できれば大勢にまとめて当てろ" },
-            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 12, color: "#4dff4d", numCode: "11",
+            "FG-11": { name: "カエル", hp: 90, gas: 100, climb: 12, color: "#40AF1E", numCode: "11",
                 heroName: "ゲロック", hpStars: "★★☆☆☆", moveStars: "★★★☆☆",
                 ultName: "Rain Or Fountain",
                 ultDesc: "着弾してから水の弾を拡散させる\n地面に落ちれば噴水のように広がり\n天井に当てれば雨のように広範囲に攻撃" },
-            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 6, color: "#228b22", numCode: "12",
+            "TT-12": { name: "カメ", hp: 115, gas: 95, climb: 6, color: "#027E49", numCode: "12",
                 heroName: "クーラー", hpStars: "★★★★☆", moveStars: "★☆☆☆☆",
                 ultName: "Turtle Shell Dome",
                 ultDesc: "着弾点を中心にドームを生成\n自分を守ったり、敵を閉じ込めたり、橋を創ったり\n戦況に応じて使い分けて機動力の低さをカバーしろ" },
-            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 8, color: "#a0522d", numCode: "13",
+            "GK-13": { name: "ゴリラ", hp: 110, gas: 90, climb: 8, color: "#324352", numCode: "13",
                 heroName: "ゴルグル", hpStars: "★★★★☆", moveStars: "★★☆☆☆",
                 ultName: "QB Cannon Arm",
                 ultDesc: "ラグビーボールのように不規則にバウンドするショットを放つ\n何度かバウンドするので、多段ヒットで大ダメージを狙え！\nバウンドするたびに威力が落ちるので、1発目を正確に当てろ！" },
-            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 10, color: "#708090", numCode: "14",
+            "WF-14": { name: "オオカミ", hp: 105, gas: 110, climb: 10, color: "#7B7A79", numCode: "14",
                 heroName: "ゾロ", hpStars: "★★★☆☆", moveStars: "★★★☆☆",
                 ultName: "Beastly Gust Of Wind",
                 ultDesc: "着弾点にこぶたの家を破壊するほど強い突風を発生させる\nダメージを与えつつ少し遠くに吹き飛ばす\n穴に落としたり罠にハメたり、器用に立ち回り劣勢を吹き飛ばせ！" }
@@ -784,6 +795,7 @@
         let terrainMap = []; let bullets = []; let particles = []; let introPlanes = []; let supplyItems = [];
         let visualEffects = []; let treeObjects = []; let screenShakeIntensity = 0;
         let iceZones = []; // 🧊 ペンギン固有弾が残す氷結ゾーン: {x, y, r}
+        const COMMON_BULLET_COLOR = "#ffcc00"; // 🌟 通常弾・特殊弾(wp0〜4)共通色。背景に埋もれにくい明るい黄色
 
         // 🧊 指定座標が氷結ゾーン内かどうかを判定
         function isInIceZone(x, y) {
@@ -1131,7 +1143,26 @@
                 if (this.type === 5 && this.owner.charKey === "BR-03") windFactor = 0.02; 
                 
                 this.vx += windPower * windFactor * 0.05;
-                this.vy += this.gravity; this.x += this.vx; this.y += this.vy;
+                this.vy += this.gravity;
+                let oldX = this.x, oldY = this.y;
+                let newX = this.x + this.vx, newY = this.y + this.vy;
+
+                // 🌟 すり抜け防止：1フレームでの移動距離が長いと、薄い壁の場合「移動前と移動後の間」にすっぽり収まり、
+                // 着地点だけのチェックでは衝突を検知できないことがあった。経路を3pxごとに刻んでチェックする
+                // (オバケの固有弾は地形貫通が仕様のため対象外)
+                let isPiercing = (this.type === 5 && this.owner.charKey === "XX-10");
+                let moveDist = Math.hypot(newX - oldX, newY - oldY);
+                let steps = Math.max(1, Math.ceil(moveDist / 3));
+                let hitDuringMove = false;
+                if (!isPiercing) {
+                    for (let s = 1; s <= steps; s++) {
+                        let t = s / steps;
+                        let checkX = oldX + (newX - oldX) * t;
+                        let checkY = oldY + (newY - oldY) * t;
+                        if (isGround(checkX, checkY)) { this.x = checkX; this.y = checkY; hitDuringMove = true; break; }
+                    }
+                }
+                if (!hitDuringMove) { this.x = newX; this.y = newY; }
 
                 if (this.x < -100 || this.x >= canvas.width + 100 || this.y > canvas.height + 100) { this.isDead = true; return; }
 
@@ -1198,7 +1229,7 @@
                             // 地形の反対側(外)へワープするバグがあった。移動方向の逆向きに少し戻すだけにする
                             let wasFalling = this.vy >= 0; // 天井にぶつかった場合はfalse(上昇中に衝突)
                             if (hitTerrain) {
-                                let backDist = 4;
+                                let backDist = 12; // 🌟 4→12に増加。段差等での短時間の多段バウンド連鎖を緩和
                                 let moveLen = Math.hypot(this.vx, this.vy) || 1;
                                 this.x -= (this.vx / moveLen) * backDist;
                                 this.y -= (this.vy / moveLen) * backDist;
@@ -1442,7 +1473,7 @@
                         let progress = (i / (subCount - 1)) - 0.5;
                         let spread = normalAngle + progress * (Math.PI * 100 / 180) + (Math.random() * 0.2 - 0.1); 
                         let subSpeed = 5 + Math.random() * 4;
-                        let subB = new Bullet(cx, cy - 6, Math.cos(spread) * subSpeed, Math.sin(spread) * subSpeed, "#4dff4d", 5, this.owner);
+                        let subB = new Bullet(cx, cy - 6, Math.cos(spread) * subSpeed, Math.sin(spread) * subSpeed, this.owner.color, 5, this.owner);
                         subB.isFrogSubBullet = true; 
                         bullets.push(subB);
                     }
@@ -1481,7 +1512,17 @@
                 } else { this.y += 4; }
                 
                 if (this.y >= canvas.height + 40 || this.x < -40 || this.x > canvas.width + 40) {
-                    if (this.hp > 0) { this.hp = 0; setGameMessage(`💀【落下死】${this.name} がリングアウトしました。`); }
+                    if (this.hp > 0) {
+                        this.hp = 0; setGameMessage(`💀【落下死】${this.name} がリングアウトしました。`);
+                        // 🌟 リングアウトは何フレームもかけて発生するため、次のターンまで勝敗判定を待つと
+                        // 「本当はもう決着しているのに、まだ続いているように見える」空白期間が生まれる。
+                        // ここで即座にチェックする
+                        if (window.G && !window.G.isGameOver) {
+                            let alive = window.G.tanks.filter(t => t.hp > 0);
+                            let isFinished = (selectedRuleMode === 'team') ? new Set(alive.map(t => t.team)).size <= 1 : alive.length <= 1;
+                            if (isFinished) window.G.checkGameOver();
+                        }
+                    }
                 }
             }
 
@@ -1741,13 +1782,15 @@
                 const bx = this.x + Math.cos(this.angle) * 22;
                 const by = this.y - 14 + Math.sin(this.angle) * 22;
                 let vel = power * 1.30; 
+                // 🌟 通常弾・特殊弾(wp0〜4)は全キャラ共通色。固有弾(wp5)だけキャラ別色で見分ける
+                let bulletColor = (wp === 5) ? this.color : COMMON_BULLET_COLOR;
 
                 if (wp === 2) { 
                     for (let i = 0; i < 3; i++) {
-                        setTimeout(() => { if (this.hp > 0) bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, 2, this)); }, i * 300);
+                        setTimeout(() => { if (this.hp > 0) bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, bulletColor, 2, this)); }, i * 300);
                     }
                 } else {
-                    let b = new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, this.color, wp, this);
+                    let b = new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, bulletColor, wp, this);
                     bullets.push(b);
                 }
                 if (this.charKey !== "CA-01") selWpType = 0;
@@ -1977,7 +2020,14 @@
                 // 🎁 アイテムの大きさを1.5倍（font 24px）にして描画
                 supplyItems.forEach(s => { ctx.save(); ctx.font = "24px sans-serif"; ctx.textAlign = "center"; drawItemEmoji(ctx, s); ctx.restore(); });
                 this.tanks.forEach(t => t.draw()); introPlanes.forEach(p => p.draw());
-                bullets.forEach(b => { ctx.save(); ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+                bullets.forEach(b => { 
+                    ctx.save(); ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = b.color; ctx.fill();
+                    // 🌟 弾の色が背景と同化して見えなくなるのを防ぐため、白+黒の二重縁取りを付ける(明暗どちらの背景でも視認できる)
+                    ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.stroke();
+                    ctx.lineWidth = 1; ctx.strokeStyle = "rgba(0,0,0,0.85)"; ctx.stroke();
+                    ctx.restore();
+                });
                 particles.forEach(p => p.draw()); visualEffects.forEach(e => e.draw());
                 
                 if (!this.isGameOver && !this.isIntro) {
