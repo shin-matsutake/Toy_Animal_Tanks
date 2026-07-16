@@ -370,7 +370,16 @@
         // ============================================================
         // 🖼️ 画像アセット管理（index.html由来／非同期プリロード）
         // ============================================================
-        const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {}, tree: null };
+        const ImageAssets = { tanks: {}, turrets: {}, stages: {}, backgrounds: {}, tree: null, items: {}, plane: null };
+        // 🌟 アイテム種別 → 実際の画像ファイル名の対応表
+        const ItemImageFiles = {
+            apple: "Item_apple.png",
+            chest: "Item_chest.png",       // 宝箱(今後のアイテム箱システム用に先行読み込み)
+            gas: "Item_gas.png",
+            medkit: "Item_medicine.png",
+            bomb: "Item_bomb.png",
+            trap_apple: "Item_fake.png"    // タヌキの木から落ちるりんご
+        };
 
         const MapStages = [
             { id: "stage1", name: "🌱 Simple meadow", mapImg: "M01.png", bgImg: "B01.png", type: "hill", gravity: 1.0 },
@@ -396,7 +405,7 @@
         const MapConfigs = { "hill": { maxItems: 3, dropRate: 0.25 }, "canyon": { maxItems: 2, dropRate: 0.20 }, "flat": { maxItems: 4, dropRate: 0.30 } };
 
         // 🌟 総画像枚数を読み込み開始「前」に確定（デグレ防止：カウンタのズレを起こさない）
-        let totalImages = (Object.keys(CharacterData).length * 3) + (MapStages.length * 2) + 1;
+        let totalImages = (Object.keys(CharacterData).length * 3) + (MapStages.length * 2) + 1 + Object.keys(ItemImageFiles).length + 1;
         let loadedImages = 0;
 
         function onImageLoad() {
@@ -440,6 +449,18 @@
         ImageAssets.tree = new Image();
         ImageAssets.tree.onload = onImageLoad; ImageAssets.tree.onerror = onImageLoad;
         ImageAssets.tree.src = `assets/images/tree.png`;
+
+        // 🎁 アイテム画像
+        Object.keys(ItemImageFiles).forEach(key => {
+            ImageAssets.items[key] = new Image();
+            ImageAssets.items[key].onload = onImageLoad; ImageAssets.items[key].onerror = onImageLoad;
+            ImageAssets.items[key].src = `assets/images/${ItemImageFiles[key]}`;
+        });
+
+        // ✈️ アイテムを投下する飛行機の画像
+        ImageAssets.plane = new Image();
+        ImageAssets.plane.onload = onImageLoad; ImageAssets.plane.onerror = onImageLoad;
+        ImageAssets.plane.src = `assets/images/Fighter.png`;
         // ============================================================
 
         const Teams = ["Red", "Blue", "Yellow", "Green"];
@@ -803,6 +824,35 @@
             return false;
         }
 
+        // 🎁 アイテム箱を開封する。弾を当てた場合(dirX,dirYは弾の飛来方向の逆)・戦車が踏んだ場合(進行方向)の両方から呼ばれる。
+        function openItemBox(item, dirX, dirY) {
+            let idx = supplyItems.indexOf(item);
+            if (idx === -1 || item.state !== 'box') return;
+            supplyItems.splice(idx, 1);
+
+            // 💣 ミミック・爆弾はその場で爆発して終わり(中身のドロップは無い)
+            if (item.type === 'mimic' || item.type === 'bomb') {
+                damageTerrain(item.x, item.y, 30, 25, null, null);
+                visualEffects.push(new RingEffect(item.x, item.y, 40, "rgba(255,120,0,0.8)", "wave"));
+                return;
+            }
+
+            // 🌟 中身は、その場ではなく少し離れた位置にドロップする(その場だと着地と同時に取得してしまうため)
+            let len = Math.hypot(dirX, dirY) || 1;
+            let dropX = item.x + (dirX / len) * 45;
+            let dropY = item.y + (dirY / len) * 20;
+            dropX = Math.max(20, Math.min(canvas.width - 20, dropX));
+
+            if (item.type === 'chest') {
+                // 🪆 宝箱：マトリョシカのように、抽選テーブルから再度中身を引いて「新しい箱」としてドロップする
+                let resultType = rollItemBoxType();
+                supplyItems.push(new SupplyItem(dropX, dropY, resultType, 'box'));
+            } else {
+                // りんご・救急箱・ガソリン：中身(取得可能な状態)としてドロップする
+                supplyItems.push(new SupplyItem(dropX, dropY, item.type, 'revealed'));
+            }
+        }
+
         // 地形の見た目＋当たり判定の実体。M0x.pngをそのまま描画し、削れば穴が開く／盛れば復元する。
         const mapCanvas = document.createElement("canvas");
         const mapCtx = mapCanvas.getContext("2d");
@@ -1084,7 +1134,17 @@
             }
         }
 
-        class SupplyItem { constructor(x, y, type) { this.x = x; this.y = y; this.type = type; } }
+        class SupplyItem { constructor(x, y, type, state = 'revealed') { this.x = x; this.y = y; this.type = type; this.state = state; } }
+        // 🎁 アイテム箱の抽選テーブル（りんご20% / 救急箱25% / ガソリン20% / 宝箱15% / 爆弾10% / ミミック10%）
+        function rollItemBoxType() {
+            let r = Math.random() * 100;
+            if (r < 20) return "apple";
+            if (r < 45) return "medkit";
+            if (r < 65) return "gas";
+            if (r < 80) return "chest";
+            if (r < 90) return "bomb";
+            return "mimic";
+        }
 
         // 💥 撃破演出：「KO!」テキストが弾んでフェードアウト＋放射状の破片パーティクル
         class KillEffect {
@@ -1111,18 +1171,35 @@
             constructor(targetX, itemType) { this.x = -100; this.y = 40; this.speed = 10; this.targetX = targetX; this.itemType = itemType; this.hasDropped = false; }
             update() {
                 this.x += this.speed;
-                if (!this.hasDropped && this.x >= this.targetX) { this.hasDropped = true; supplyItems.push(new SupplyItem(this.x, 40, this.itemType)); }
+                if (!this.hasDropped && this.x >= this.targetX) { this.hasDropped = true; supplyItems.push(new SupplyItem(this.x, 40, this.itemType, 'box')); }
             }
-            draw() { ctx.fillStyle = "#88f"; ctx.fillRect(this.x - 25, this.y - 6, 50, 12); }
+            draw() {
+                let img = ImageAssets.plane;
+                if (img && img.complete && img.width > 0) {
+                    // 🌟 画像比率を変えたくない、という指定のため横2:縦1の固定比率で描画
+                    let h = 24, w = h * 2;
+                    ctx.drawImage(img, this.x - w / 2, this.y - h / 2, w, h);
+                } else {
+                    ctx.fillStyle = "#88f"; ctx.fillRect(this.x - 25, this.y - 6, 50, 12);
+                }
+            }
         }
 
         function drawItemEmoji(ctx, s) {
+            // 🎭 ミミックは宝箱と同じ見た目にして、開けるまで区別がつかないようにする
+            let visualType = (s.type === 'mimic') ? 'chest' : s.type;
+            let img = ImageAssets.items[visualType];
+            if (img && img.complete && img.width > 0) {
+                let size = 30; // 🌟 正方形(1:1)で描画
+                ctx.drawImage(img, s.x - size / 2, s.y - size / 2, size, size);
+                return;
+            }
             let emoji = "🎁";
-            if (s.type === "apple") emoji = "🍏";
-            if (s.type === "trap_apple") emoji = "🌰"; 
-            if (s.type === "medkit") emoji = "🧰";
-            if (s.type === "gas") emoji = "🛢️";
-            if (s.type === "bomb") emoji = "💣";
+            if (visualType === "apple") emoji = "🍏";
+            if (visualType === "trap_apple") emoji = "🌰"; 
+            if (visualType === "medkit") emoji = "🧰";
+            if (visualType === "gas") emoji = "🛢️";
+            if (visualType === "bomb") emoji = "💣";
             ctx.fillText(emoji, s.x, s.y + 8); // 1.5倍化に伴う表示座標微調整
         }
 
@@ -1187,6 +1264,17 @@
                         if (dist < (this.radius + 22)) hitTank = t;
                     }
                 });
+
+                // 🎁 アイテム箱への直撃：弾が飛んできた方向の逆へ中身をドロップして箱を開ける
+                for (let i = supplyItems.length - 1; i >= 0; i--) {
+                    let item = supplyItems[i];
+                    if (item.state === 'box' && Math.hypot(this.x - item.x, this.y - item.y) < (this.radius + 16)) {
+                        let moveLen = Math.hypot(this.vx, this.vy) || 1;
+                        openItemBox(item, -this.vx / moveLen, -this.vy / moveLen);
+                        if (!(this.type === 5 && this.owner.charKey === "XX-10")) { this.isDead = true; return; }
+                        break;
+                    }
+                }
 
                 if (this.type === 5 && this.owner.charKey === "XX-10") {
                     if (hitTank) { this.explode(this.x, this.y, hitTank); }
@@ -1549,6 +1637,11 @@
                 for (let i = supplyItems.length - 1; i >= 0; i--) {
                     let item = supplyItems[i];
                     if (Math.hypot(this.x - item.x, (this.y - 11) - item.y) < 34) {
+                        if (item.state === 'box') {
+                            // 🎁 箱を踏んだ：進行方向(向いている方向)へ中身をドロップする
+                            openItemBox(item, this.facingDir, -0.3);
+                            continue;
+                        }
                         supplyItems.splice(i, 1);
                         if (item.type === "apple") this.hp = Math.min(this.maxHp, this.hp + 25);
                         else if (item.type === "medkit") this.hp = Math.min(this.maxHp, this.hp + 50);
@@ -1879,9 +1972,8 @@
                 let currentLimit = MapConfigs[selectedStageObj.type]?.maxItems ?? 3;
                 let dropRate = MapConfigs[selectedStageObj.type]?.dropRate ?? 0.25;
                 if (Math.random() < dropRate && supplyItems.length < currentLimit) {
-                    let randX = 100 + Math.random() * (canvas.width - 200); let r = Math.random() * 100;
-                    let type = "apple";
-                    if (r < 35) type = "apple"; else if (r < 50) type = "medkit"; else if (r < 75) type = "gas"; else if (r < 90) type = "apple"; else type = "bomb";
+                    let randX = 100 + Math.random() * (canvas.width - 200);
+                    let type = rollItemBoxType();
                     introPlanes.push(new ItemDropPlane(randX, type));
                 }
             }
