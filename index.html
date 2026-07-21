@@ -816,7 +816,8 @@
         let terrainMap = []; let bullets = []; let particles = []; let introPlanes = []; let supplyItems = [];
         let visualEffects = []; let treeObjects = []; let screenShakeIntensity = 0;
         let iceZones = []; // 🧊 ペンギン固有弾が残す氷結ゾーン: {x, y, r}
-        const COMMON_BULLET_COLOR = "#ffcc00"; // 🌟 通常弾・特殊弾(wp0〜4)共通色。背景に埋もれにくい明るい黄色
+        // 🌟 武器種ごとの弾の色（固有弾はキャラごとの色を使うため対象外）
+        const WEAPON_BULLET_COLORS = { 0: "#324352", 1: "#E03D00", 2: "#F05894", 3: "#033776", 4: "#01939F" };
 
         // 🧊 指定座標が氷結ゾーン内かどうかを判定
         function isInIceZone(x, y) {
@@ -830,27 +831,32 @@
             if (idx === -1 || item.state !== 'box') return;
             supplyItems.splice(idx, 1);
 
-            // 💣 ミミック・爆弾はその場で爆発して終わり(中身のドロップは無い)
-            if (item.type === 'mimic' || item.type === 'bomb') {
+            // 🎭 ミミック：その場で爆発して終わり(中身のドロップは無い)
+            if (item.type === 'mimic') {
                 damageTerrain(item.x, item.y, 30, 25, null, null);
                 visualEffects.push(new RingEffect(item.x, item.y, 40, "rgba(255,120,0,0.8)", "wave"));
                 return;
             }
 
-            // 🌟 中身は、その場ではなく少し離れた位置にドロップする(その場だと着地と同時に取得してしまうため)
+            // 🪆 宝箱：マトリョシカのように、抽選テーブルから再度中身を引く。
+            // 中身が宝箱/ミミックならまた「箱」のまま、それ以外(りんご/救急箱/ガソリン/爆弾)は直接取得可能な状態でドロップする
             let len = Math.hypot(dirX, dirY) || 1;
             let dropX = item.x + (dirX / len) * 45;
             let dropY = item.y + (dirY / len) * 20;
             dropX = Math.max(20, Math.min(canvas.width - 20, dropX));
 
-            if (item.type === 'chest') {
-                // 🪆 宝箱：マトリョシカのように、抽選テーブルから再度中身を引いて「新しい箱」としてドロップする
-                let resultType = rollItemBoxType();
-                supplyItems.push(new SupplyItem(dropX, dropY, resultType, 'box'));
-            } else {
-                // りんご・救急箱・ガソリン：中身(取得可能な状態)としてドロップする
-                supplyItems.push(new SupplyItem(dropX, dropY, item.type, 'revealed'));
-            }
+            let resultType = rollChestContentType(); // 🌟 宝箱の中身は「宝箱を開けた時の中身テーブル」(ミミックあり)を使う
+            let resultState = (resultType === 'chest' || resultType === 'mimic') ? 'box' : 'revealed';
+            supplyItems.push(new SupplyItem(dropX, dropY, resultType, resultState));
+        }
+
+        // 💣 地面に置かれた爆弾(取得可能な状態)が、触れられる／撃たれることで爆発する処理
+        function explodeItemBomb(item) {
+            let idx = supplyItems.indexOf(item);
+            if (idx === -1) return;
+            supplyItems.splice(idx, 1);
+            damageTerrain(item.x, item.y, 30, 25, null, null);
+            visualEffects.push(new RingEffect(item.x, item.y, 40, "rgba(255,120,0,0.8)", "wave"));
         }
 
         // 地形の見た目＋当たり判定の実体。M0x.pngをそのまま描画し、削れば穴が開く／盛れば復元する。
@@ -1135,8 +1141,17 @@
         }
 
         class SupplyItem { constructor(x, y, type, state = 'revealed') { this.x = x; this.y = y; this.type = type; this.state = state; } }
-        // 🎁 アイテム箱の抽選テーブル（りんご20% / 救急箱25% / ガソリン20% / 宝箱15% / 爆弾10% / ミミック10%）
-        function rollItemBoxType() {
+        // ✈️ 飛行機の投下テーブル（りんご35% / 救急箱15% / ガソリン25% / 宝箱15% / 爆弾10%。ミミックは含まない）
+        function rollPlaneDropType() {
+            let r = Math.random() * 100;
+            if (r < 35) return "apple";
+            if (r < 50) return "medkit";
+            if (r < 75) return "gas";
+            if (r < 90) return "chest";
+            return "bomb";
+        }
+        // 🎁 宝箱を開けた時の中身テーブル（りんご20% / 救急箱25% / ガソリン20% / 宝箱15% / 爆弾10% / ミミック10%）
+        function rollChestContentType() {
             let r = Math.random() * 100;
             if (r < 20) return "apple";
             if (r < 45) return "medkit";
@@ -1171,7 +1186,12 @@
             constructor(targetX, itemType) { this.x = -100; this.y = 40; this.speed = 10; this.targetX = targetX; this.itemType = itemType; this.hasDropped = false; }
             update() {
                 this.x += this.speed;
-                if (!this.hasDropped && this.x >= this.targetX) { this.hasDropped = true; supplyItems.push(new SupplyItem(this.x, 40, this.itemType, 'box')); }
+                if (!this.hasDropped && this.x >= this.targetX) {
+                    this.hasDropped = true;
+                    // 🌟 「開ける」動作が必要なのは宝箱・ミミックだけ。りんご/救急箱/ガソリン/爆弾は今まで通り直接触れる
+                    let state = (this.itemType === 'chest' || this.itemType === 'mimic') ? 'box' : 'revealed';
+                    supplyItems.push(new SupplyItem(this.x, 40, this.itemType, state));
+                }
             }
             draw() {
                 let img = ImageAssets.plane;
@@ -1265,12 +1285,16 @@
                     }
                 });
 
-                // 🎁 アイテム箱への直撃：弾が飛んできた方向の逆へ中身をドロップして箱を開ける
+                // 🎁 アイテム箱／爆弾への直撃：弾が飛んできた方向の逆へ中身をドロップして箱を開ける(爆弾はその場で爆発)
                 for (let i = supplyItems.length - 1; i >= 0; i--) {
                     let item = supplyItems[i];
-                    if (item.state === 'box' && Math.hypot(this.x - item.x, this.y - item.y) < (this.radius + 16)) {
-                        let moveLen = Math.hypot(this.vx, this.vy) || 1;
-                        openItemBox(item, -this.vx / moveLen, -this.vy / moveLen);
+                    if (Math.hypot(this.x - item.x, this.y - item.y) < (this.radius + 16)) {
+                        if (item.state === 'box') {
+                            let moveLen = Math.hypot(this.vx, this.vy) || 1;
+                            openItemBox(item, -this.vx / moveLen, -this.vy / moveLen);
+                        } else if (item.type === 'bomb') {
+                            explodeItemBomb(item);
+                        } else { continue; }
                         if (!(this.type === 5 && this.owner.charKey === "XX-10")) { this.isDead = true; return; }
                         break;
                     }
@@ -1642,6 +1666,7 @@
                             openItemBox(item, this.facingDir, -0.3);
                             continue;
                         }
+                        if (item.type === 'bomb') { explodeItemBomb(item); continue; }
                         supplyItems.splice(i, 1);
                         if (item.type === "apple") this.hp = Math.min(this.maxHp, this.hp + 25);
                         else if (item.type === "medkit") this.hp = Math.min(this.maxHp, this.hp + 50);
@@ -1876,11 +1901,15 @@
                 const by = this.y - 14 + Math.sin(this.angle) * 22;
                 let vel = power * 1.30; 
                 // 🌟 通常弾・特殊弾(wp0〜4)は全キャラ共通色。固有弾(wp5)だけキャラ別色で見分ける
-                let bulletColor = (wp === 5) ? this.color : COMMON_BULLET_COLOR;
+                let bulletColor = (wp === 5) ? this.color : (WEAPON_BULLET_COLORS[wp] || "#ffcc00");
 
                 if (wp === 2) { 
+                    window.G.pendingBulletSpawns = (window.G.pendingBulletSpawns || 0) + 3; // 🌟 まだ発射されていない残弾数を記録
                     for (let i = 0; i < 3; i++) {
-                        setTimeout(() => { if (this.hp > 0) bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, bulletColor, 2, this)); }, i * 300);
+                        setTimeout(() => {
+                            if (this.hp > 0) bullets.push(new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, bulletColor, 2, this));
+                            window.G.pendingBulletSpawns--; // 🌟 発射済みになったので残り予定数から減らす(hp<=0で撃てなかった場合も含め必ず減らす)
+                        }, i * 300);
                     }
                 } else {
                     let b = new Bullet(bx, by, Math.cos(this.angle)*vel, Math.sin(this.angle)*vel, bulletColor, wp, this);
@@ -1973,7 +2002,7 @@
                 let dropRate = MapConfigs[selectedStageObj.type]?.dropRate ?? 0.25;
                 if (Math.random() < dropRate && supplyItems.length < currentLimit) {
                     let randX = 100 + Math.random() * (canvas.width - 200);
-                    let type = rollItemBoxType();
+                    let type = rollPlaneDropType(); // 🌟 飛行機の投下は「飛行機の投下テーブル」(ミミックなし)を使う
                     introPlanes.push(new ItemDropPlane(randX, type));
                 }
             }
@@ -2062,7 +2091,7 @@
                 for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) particles.splice(i, 1); }
                 for (let i = visualEffects.length - 1; i >= 0; i--) { visualEffects[i].update(); if (visualEffects[i].life <= 0) visualEffects.splice(i, 1); }
                 
-                if (this.isShooting && bullets.length === 0) {
+                if (this.isShooting && bullets.length === 0 && (this.pendingBulletSpawns || 0) === 0) {
                     if (currentTank && currentTank.charKey === "CA-01" && currentTank.nekoCombo) { this.isShooting = false; selWpType = 0; this.upWpBtn(); } 
                     else { this.isShooting = false; this.nextTurn(); }
                 }
