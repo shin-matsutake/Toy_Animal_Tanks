@@ -5,7 +5,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-select=none">
     <title>動物戦車 おもちゃの大乱闘【全キャラ固有弾・調整版】</title>
     <style>
-        body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; margin: 0; padding: 10px; touch-action: manipulation; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        body { text-align: center; background: #222; color: #fff; font-family: sans-serif; user-select: none; touch-action: manipulation; }
+
+        /* 🌟【画面比率固定化・フェーズ1】screenStage=実ビューポート全体（黒背景・レターボックス）。
+           gameRoot=デザイン解像度の固定サイズの箱。中身は一切変更せず、この箱ごとJSでscale()する。
+           横画面プロファイル(1280x720)／縦画面プロファイル(720x1560)の2種類を用意し、ボタンで随時切替可能にする。 */
+        #screenStage { position: fixed; inset: 0; background: #000; overflow: hidden; }
+        #gameRoot { position: absolute; top: 0; left: 0; transform-origin: top left; background: #222; box-sizing: border-box; padding: 10px; overflow-y: auto; }
+        #gameRoot.profile-landscape { width: 1280px; height: 720px; }
+        #gameRoot.profile-portrait { width: 720px; height: 1560px; }
+        #profileToggleBtn { position: fixed; top: 6px; left: 6px; z-index: 200; background: #444; color: #fff; border: 2px solid #777; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; opacity: 0.85; }
         #debugLog { background: #020; color: #0f0; border: 2px solid #0f0; padding: 10px; margin: 5px auto; max-width: 1200px; border-radius: 6px; text-align: left; font-family: monospace; font-size: 14px; white-space: pre-wrap; box-sizing: border-box; }
         canvas { background: #87CEEB; border: 3px solid #555; display: block; margin: 5px auto; max-width: 100%; height: auto; }
         
@@ -74,21 +84,20 @@
         .char-cell .char-cell-label { font-size: 10px; color: #ccc; margin-top: 2px; pointer-events: none; }
 
         #assignSlots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
-        @media (max-width: 800px) { #assignSlots { grid-template-columns: repeat(2, 1fr); } }
         .assign-slot { background: #222232; border: 2px dashed #555575; border-radius: 10px; padding: 8px; min-height: 100px; text-align: center; }
         .assign-slot.inactive { opacity: 0.25; pointer-events: none; }
         .assign-slot.drag-over { border-color: #0f0; background: #1a3a1a; }
 
-        /* 📱 縦長スマホ向け：詳細パネルとグリッドの横並びをやめ、縦積みにして幅を確保する */
-        @media (max-width: 600px) {
-            #charSelectLayout { flex-direction: column; }
-            #charDetailPanel { flex: none; width: 100%; box-sizing: border-box; }
-            #charGrid { grid-template-columns: repeat(4, 1fr); }
-            .char-cell img { height: 42px; }
-        }
-        @media (max-width: 420px) {
-            #charGrid { grid-template-columns: repeat(3, 1fr); }
-        }
+        /* 🌟【画面比率固定化・フェーズ2】列数は「物理ビューポート幅」ではなく「現在の画面プロファイル」で決める。
+           @media (max-width) は scale() 後の論理サイズとズレて誤判定するため、ここでは使わない。 */
+        #gameRoot.profile-landscape #assignSlots { grid-template-columns: repeat(8, 1fr); }
+        #gameRoot.profile-portrait #assignSlots { grid-template-columns: repeat(2, 1fr); }
+
+        /* 📱 縦画面プロファイル向け：詳細パネルとグリッドの横並びをやめ、縦積みにして幅を確保する（暫定。フェーズ3で再設計予定） */
+        #gameRoot.profile-portrait #charSelectLayout { flex-direction: column; }
+        #gameRoot.profile-portrait #charDetailPanel { flex: none; width: 100%; box-sizing: border-box; }
+        #gameRoot.profile-portrait #charGrid { grid-template-columns: repeat(4, 1fr); }
+        #gameRoot.profile-portrait .char-cell img { height: 42px; }
         .assign-slot .player-type-label { font-size: 10px; color: #0ff; font-weight: bold; }
         .assign-slot input.player-name-input { width: 100%; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; font-size: 12px; text-align: center; margin-bottom: 4px; padding: 2px; box-sizing: border-box; }
         .assign-slot .assign-img { width: 42px; height: 42px; object-fit: contain; margin: 2px auto; display: block; pointer-events: none; }
@@ -170,6 +179,9 @@
     </style>
 </head>
 <body>
+    <button id="profileToggleBtn" onclick="toggleScreenProfile()">📐 横/縦 切替(テスト用)</button>
+    <div id="screenStage">
+    <div id="gameRoot" class="profile-landscape">
 
     <div id="debugLog">⏳ 画像アセットを読み込み中...</div>
     <button id="returnMenuBtn" onclick="returnToMenu()">🏠 タイトルメニューに戻る</button>
@@ -306,6 +318,9 @@
     <!-- 🌟 コンパクトモード時のみ使う十字パッドの受け皿(通常時は空・非表示) -->
 
     <button id="compactToggleBtn" onclick="toggleCompactManually()" title="画面構成を切り替え">⇄ 表示切替</button>
+
+    </div><!-- /#gameRoot -->
+    </div><!-- /#screenStage -->
 
     <script>
         const CharacterData = {
@@ -2264,10 +2279,72 @@
                 fitCompactCanvas(); // モードは変わらないがウィンドウサイズだけ変わった場合の再フィット
             }
         }
-        window.addEventListener('resize', checkAutoCompact);
-        if (window.visualViewport) window.visualViewport.addEventListener('resize', checkAutoCompact);
-        window.addEventListener('orientationchange', checkAutoCompact);
-        checkAutoCompact();
+        // 🌟【画面比率固定化・フェーズ1】旧・自動コンパクト判定(window実寸ベース)は、
+        // gameRootを固定サイズ化してscale()する新方式と前提が食い違うため、フェーズ1では無効化しておく。
+        // (コンパクトモード自体は将来的に「縦画面プロファイル」に統合される想定。手動ボタンでの動作は維持)
+        // window.addEventListener('resize', checkAutoCompact);
+        // if (window.visualViewport) window.visualViewport.addEventListener('resize', checkAutoCompact);
+        // window.addEventListener('orientationchange', checkAutoCompact);
+        // checkAutoCompact();
+
+        // ============================================================
+        // 🌟【画面比率固定化・フェーズ1】固定デザイン解像度＋scale()の土台
+        // ============================================================
+        // デザイン解像度：横画面プロファイル=1280x720／縦画面プロファイル=720x1560
+        // 実際の中身レイアウトはまだ手を付けず、「箱ごと拡大縮小してフィットさせる」仕組みのみをここで検証する。
+        const SCREEN_PROFILES = {
+            landscape: { w: 1280, h: 720 },
+            portrait: { w: 720, h: 1560 }
+        };
+
+        function getCurrentProfileName() {
+            const root = document.getElementById('gameRoot');
+            return root.classList.contains('profile-portrait') ? 'portrait' : 'landscape';
+        }
+
+        // 🌟 実ビューポート寸法に、指定プロファイルの固定サイズ箱を収めるscale値と余白(中央寄せ)を計算する。
+        //     DOM非依存の純粋な計算関数にしてあるので、Node単体テストで数値検証できる。
+        function computeStageFit(viewportW, viewportH, profileW, profileH) {
+            const scale = Math.min(viewportW / profileW, viewportH / profileH);
+            const offsetX = (viewportW - profileW * scale) / 2;
+            const offsetY = (viewportH - profileH * scale) / 2;
+            return { scale, offsetX, offsetY };
+        }
+
+        function fitScreenStage() {
+            const root = document.getElementById('gameRoot');
+            if (!root) return;
+            const profile = SCREEN_PROFILES[getCurrentProfileName()];
+            const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const fit = computeStageFit(vw, vh, profile.w, profile.h);
+            root.style.transform = `scale(${fit.scale})`;
+            root.style.left = `${fit.offsetX}px`;
+            root.style.top = `${fit.offsetY}px`;
+        }
+
+        function setScreenProfile(profileName) {
+            const root = document.getElementById('gameRoot');
+            root.classList.remove('profile-landscape', 'profile-portrait');
+            root.classList.add('profile-' + profileName);
+            fitScreenStage();
+        }
+
+        function toggleScreenProfile() {
+            setScreenProfile(getCurrentProfileName() === 'portrait' ? 'landscape' : 'portrait');
+        }
+
+        // 🌟 初期プロファイルは実画面の縦横比から自動判定。以降はボタンでいつでも手動切替できる(C案)。
+        function detectInitialProfile() {
+            const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            return vw >= vh ? 'landscape' : 'portrait';
+        }
+
+        setScreenProfile(detectInitialProfile());
+        window.addEventListener('resize', fitScreenStage);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', fitScreenStage);
+        window.addEventListener('orientationchange', fitScreenStage);
 
         initHybridInputBinds();
         function startGame() {
